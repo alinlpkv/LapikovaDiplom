@@ -145,9 +145,11 @@ class ExampleApp(QtWidgets.QMainWindow):
 
         self.figure = plt.figure()
         self.canvas = FigureCanvas(self.figure)
+
         layout = QVBoxLayout()
         layout.addWidget(NavigationToolbar(self.canvas, self))
         layout.addWidget(self.canvas)
+
         self.main.plotWidget.setLayout(layout)
 
         self.fhelp = plt.figure()
@@ -744,7 +746,7 @@ class ExampleApp(QtWidgets.QMainWindow):
             global Gm
             Gm = self.findGm()
 
-    #
+    # РАСЧЕТ И ПОСТРОЕНИЕ КРИВОЙ ЗАВИСИМОСТИ Мкр
     def MakeMkr(self):
         self.main.tabWidget.setCurrentIndex(0)
         # Расчет координат вспомогательной прямой
@@ -773,16 +775,35 @@ class ExampleApp(QtWidgets.QMainWindow):
         self.connection.commit()
 
         # Отображение в приложении
-        self.cursor.execute('''SELECT * FROM "Кривая зависимость Мкр" ''')
-        # print(self.cursor.fetchall())
+        SQLquery = 'SELECT * FROM "Кривая зависимость Мкр"'
 
-        # for index, form in enumerate(self.cursor.fetchall()):
-        #     i = 0
-        #     for item in form:
-        #         print(str(item))
-        #         self.tableWidget_Mkr.setItem(index, i, QTableWidgetItem(str(item)))
-        #         i = i + 1
-        #     self.tableWidget_Mkr.insertRow(1)
+        # tablerow = 0
+        # self.main.tableWidget_Mkr.setRowCount(8)
+        # self.main.tableWidget_Mkr.setColumnCount(2)
+        # for row in self.cursor.execute(SQLquery):
+        #     for col in range(2):
+        #         item = QtWidgets.QTableWidgetItem(str(row[col]))
+        #         item.setTextAlignment(QtCore.Qt.AlignCenter)
+        #         item.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
+        #         self.main.tableWidget_Mkr.setItem(tablerow, col, item)
+        #     tablerow = tablerow + 1
+
+        tablecol = 1
+        self.main.tableWidget_Mkr.setRowCount(2)
+        self.main.tableWidget_Mkr.setColumnCount(9)
+        for row in self.cursor.execute(SQLquery):
+            for col in range(2):
+                    item = QtWidgets.QTableWidgetItem(str(row[col]))
+                    tablerow = col
+                    item.setTextAlignment(QtCore.Qt.AlignCenter)
+                    item.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
+                    self.main.tableWidget_Mkr.setItem(tablerow, tablecol, item)
+            tablecol = tablecol + 1
+
+        item1 = QtWidgets.QTableWidgetItem('Cya')
+        item2 = QtWidgets.QTableWidgetItem('Мкр')
+        self.main.tableWidget_Mkr.setItem(0, 0, item1)
+        self.main.tableWidget_Mkr.setItem(1, 0, item2)
 
         # Расчет точки ?????
         Vms = float('%.3f' % (V / 3.6)) # км/ч в м/с
@@ -797,8 +818,16 @@ class ExampleApp(QtWidgets.QMainWindow):
         self.figure.clear()
         ax = self.figure.add_subplot(111)
         # plot data
-        ax.plot(arr_cya, arr_Mkr)
-        ax.plot(cya_rasch, Mrasch, marker='.')
+        ax.plot(arr_cya, arr_Mkr,color = 'k', label='Мкр = f(cya)')
+        ax.plot(cya_rasch, Mrasch, marker='.',color = 'navy', label = '')
+
+        ax.text(cya_rasch, Mrasch, '  A(Мрасч;Суа расч)', rotation=0 ,fontsize=7)
+        ax.legend(loc = 'lower left')
+        ax.set_title('Кривая зависимости Мкр = f(cya)', loc = 'right', pad = 5, fontsize = 11)
+        # ax.set_xlabel('Суа')
+        # ax.set_ylabel('Мкр')
+        # ax.vlines(cya_rasch, arr_Mkr[7], Mrasch, color='lightgray',linewidth=1,linestyle='--')
+        # ax.grid()
         self.canvas.draw()
 
     # ПОСТРОЕНИЕ ВСПОМОГАТЕЛЬНОЙ КРИВОЙ cya = f(a)
@@ -829,19 +858,22 @@ class ExampleApp(QtWidgets.QMainWindow):
         deltaalfa= 2 # !!! произвольно
         px5 = px4 + deltaalfa
 
-        arrX = [a0, alfa_px2, px3, px4]
-        arrY = [0, cya_py2, cya_py3, py]
+        arrX = [a0, alfa_px2, px3]
+        arrY = [0, cya_py2, cya_py3]
         # plot data
-        ax.plot(arrX, arrY)
+        ax.plot(arrX, arrY, label = 'Cya=f(a)', color='k')
         ax.plot(a0, 0, marker='.')
         ax.plot(alfa_px2, cya_py2, marker='.')
         ax.plot(px3, cya_py3, marker='.')
         ax.plot(px4, Cyamax, marker='.')
         ax.plot(px5, Cyamax, marker='.')
-        arc = matplotlib.patches.Arc((px5, cya_py3), deltaalfa*2, (Cyamax-cya_py3)*2, 180, 270)
+
+        ax.set_title('Вспомогательная кривая Cya = f(a)', loc='right', pad=5, fontsize=11)
+        ax.legend(loc='lower right')
+        # arc = matplotlib.patches.Arc((px5, cya_py3), deltaalfa*2, (Cyamax-cya_py3)*2, 180, 270)
 
 
-        ax.add_patch(arc)
+        # ax.add_patch(arc)
         self.chelp.draw()
 
     def MakeUp(self):

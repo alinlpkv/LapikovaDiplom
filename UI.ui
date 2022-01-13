@@ -45,7 +45,7 @@ font-size: 14px;
 </string>
       </property>
       <property name="currentIndex">
-       <number>0</number>
+       <number>1</number>
       </property>
       <property name="documentMode">
        <bool>false</bool>
@@ -2655,7 +2655,7 @@ height: 30px
          <rect>
           <x>220</x>
           <y>10</y>
-          <width>1021</width>
+          <width>1131</width>
           <height>721</height>
          </rect>
         </property>
@@ -2670,9 +2670,9 @@ height: 30px
           <property name="geometry">
            <rect>
             <x>20</x>
-            <y>420</y>
-            <width>171</width>
-            <height>51</height>
+            <y>630</y>
+            <width>21</width>
+            <height>41</height>
            </rect>
           </property>
           <property name="text">
@@ -2684,8 +2684,8 @@ height: 30px
            <rect>
             <x>20</x>
             <y>30</y>
-            <width>561</width>
-            <height>301</height>
+            <width>621</width>
+            <height>341</height>
            </rect>
           </property>
          </widget>
@@ -2693,9 +2693,9 @@ height: 30px
           <property name="geometry">
            <rect>
             <x>20</x>
-            <y>350</y>
-            <width>751</width>
-            <height>51</height>
+            <y>390</y>
+            <width>991</width>
+            <height>91</height>
            </rect>
           </property>
          </widget>
