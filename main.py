@@ -6,16 +6,20 @@ from PyQt5 import QtWidgets, QtCore, QtGui
 from PyQt5.QtWidgets import QVBoxLayout, QTableWidgetItem
 # from matplotlib.backends.backend_template import FigureCanvas
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+
 from UI import Ui_MainWindow  # Это наш конвертированный файл дизайна
 # pyuic5 UI.ui -o UI.py
 import math
 from matplotlib.backends.backend_qt5agg import (NavigationToolbar2QT as NavigationToolbar)
 import matplotlib.pyplot as plt
 import numpy as np
-
+from scipy import *
+from UI_Choose import Ui_Form
+from UI_dialog import Ui_Dialog
 
 # GLOBAL
 # Wing
+
 l = 0
 S = 0
 b = 0
@@ -63,6 +67,7 @@ hvzl = 0
 hpos = 0
 Sobpr = 0
 Sobpr_ = 0
+Flap_type = ''
 
 # Tail
 bgo = 0
@@ -108,6 +113,8 @@ ln_gsh = 0
 lamdan_gsh = 0
 
 # Common Data
+Dv = 0
+Fv = 0
 Gvzl = 0
 V = 0
 number = 0
@@ -125,14 +132,76 @@ pH = 0  # массовая плотность
 aH = 0  # скорость звука
 Gm = 0  # полный запас топлива
 
+dCyamax = 0  # по типу закрылка
+
 # CONST
 g = 9.8
 
 # ВЫСЧИТАННЫЕ
-Gpol = 0 # полетный вес самолета
+Mrasch = 0  # число Маха расчетное
+Gpol = 0  # полетный вес самолета
 Cyamax = 0
+da0_vzl = 0
+# Вспомогательная кривая
+Re = 0
+Vmin = 0
 
 
+# ДИАЛОГОВОЕ ОКНО С РАСЧЕТНЫМИ СХЕМАМИ
+class DialogPlan(QtWidgets.QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.dialog = Ui_Dialog()
+        self.dialog.setupUi(self)
+        self.setBu()
+
+    def setBu(self):
+        self.dialog.buNext.clicked.connect(self.NextPic)
+
+    def NextPic(self):
+        if self.dialog.stackedWidget.currentIndex() == 0:
+            self.dialog.stackedWidget.setCurrentIndex(1)
+        else:
+            self.dialog.stackedWidget.setCurrentIndex(0)
+
+
+# ДИАЛОГОВОЕ ОКНО С ЗАКРЫЛКАМИ
+class DialogMechanism(QtWidgets.QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.dialogM = Ui_Form()
+        self.dialogM.setupUi(self)
+        self.set()
+
+    def set(self):
+        self.dialogM.buClose.clicked.connect(self.ChooseClose)
+
+    def ChooseClose(self):
+        global Flap_type
+        if self.dialogM.rbWing.isChecked():
+            Flap_type = 'Исходное крыло'
+        elif self.dialogM.rbSimpleBox.isChecked():
+            Flap_type = 'Простой щиток'
+        elif self.dialogM.rbBoxCAGI.isChecked():
+            Flap_type = 'Щиток ЦАГИ'
+        elif self.dialogM.rbSimpleFlap.isChecked():
+            Flap_type = 'Простой закрылок'
+        elif self.dialogM.rbOneFlap.isChecked():
+            Flap_type = 'Однощелевой закрылок'
+        elif self.dialogM.rbTwoFlap.isChecked():
+            Flap_type = 'Двухщелевой закрылок'
+        elif self.dialogM.rnThreeFlap.isChecked():
+            Flap_type = 'Трехщелевой закрылок'
+        elif self.dialogM.rbFlapFauler.isChecked():
+            Flap_type = 'Закрылок Фаулера'
+        elif self.dialogM.rbTwoFlapFauler.isChecked():
+            Flap_type = 'Двухщелевой закрылок Фаулера'
+        elif self.dialogM.rbMulard.isChecked():
+            Flap_type = 'Предкрылок'
+        self.close()
+
+
+# ОСНОВНОЕ ПРИЛОЖЕНИЕ
 class ExampleApp(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
@@ -143,15 +212,15 @@ class ExampleApp(QtWidgets.QMainWindow):
         self.connection = sqlite3.connect('bd.db')
         self.cursor = self.connection.cursor()
 
+        # График для Мкр
         self.figure = plt.figure()
         self.canvas = FigureCanvas(self.figure)
-
         layout = QVBoxLayout()
         layout.addWidget(NavigationToolbar(self.canvas, self))
         layout.addWidget(self.canvas)
-
         self.main.plotWidget.setLayout(layout)
 
+        # График для вспомогательной кривой
         self.fhelp = plt.figure()
         self.chelp = FigureCanvas(self.fhelp)
         Vlayout_help = QVBoxLayout()
@@ -159,6 +228,7 @@ class ExampleApp(QtWidgets.QMainWindow):
         Vlayout_help.addWidget(self.chelp)
         self.main.helpwidget.setLayout(Vlayout_help)
 
+        # График для взлетной кривой
         self.fUp = plt.figure()
         self.cUp = FigureCanvas(self.fUp)
         Vlayout_Up = QVBoxLayout()
@@ -166,6 +236,21 @@ class ExampleApp(QtWidgets.QMainWindow):
         Vlayout_Up.addWidget(self.cUp)
         self.main.upwidget.setLayout(Vlayout_Up)
 
+        # График для посадочной кривой
+        self.fDown = plt.figure()
+        self.cDown = FigureCanvas(self.fDown)
+        Vlayout_Down = QVBoxLayout()
+        Vlayout_Down.addWidget(NavigationToolbar(self.cDown, self))
+        Vlayout_Down.addWidget(self.cDown)
+        self.main.downwidget.setLayout(Vlayout_Down)
+
+        # График для крейсерской кривой
+        self.fCruise = plt.figure()
+        self.cCruise = FigureCanvas(self.fCruise)
+        Vlayout_Cruise = QVBoxLayout()
+        Vlayout_Cruise.addWidget(NavigationToolbar(self.cCruise, self))
+        Vlayout_Cruise.addWidget(self.cCruise)
+        self.main.cruiswidget.setLayout(Vlayout_Cruise)
 
     def set(self):
         # Первая вкладка
@@ -176,7 +261,8 @@ class ExampleApp(QtWidgets.QMainWindow):
         self.main.tabWidget_2.setTabVisible(4, False)
         self.main.tabWidget_2.setTabVisible(5, False)
         self.main.tabWidget_2.setTabVisible(6, False)
-        self.main.tabWidget_2.setTabVisible(7, False)
+
+        self.main.buStart.clicked.connect(self.ButtonEnabled)
         self.main.buWing.clicked.connect(self.pressedWing)
         self.main.buFlapMulard.clicked.connect(self.pressedFlapMulard)
         self.main.buTail.clicked.connect(self.pressedTail)
@@ -184,6 +270,9 @@ class ExampleApp(QtWidgets.QMainWindow):
         self.main.buFuselage.clicked.connect(self.pressedFuselage)
         self.main.buGondola.clicked.connect(self.pressedGondola)
         self.main.buCommonData.clicked.connect(self.pressedCommonData)
+        self.main.buShowAirPlan.clicked.connect(self.OpenPlan)
+        self.main.buFlapChoose.clicked.connect(self.OpenFlapChoose)
+
         # вторая вкладка
         self.main.tabWidget.setTabVisible(0, False)
         self.main.tabWidget.setTabVisible(1, False)
@@ -195,6 +284,8 @@ class ExampleApp(QtWidgets.QMainWindow):
         self.main.buMkr.clicked.connect(self.MakeMkr)
         self.main.buHelp.clicked.connect(self.MakeHelp)
         self.main.buUp.clicked.connect(self.MakeUp)
+        self.main.buDown.clicked.connect(self.MakeDown)
+        self.main.buCre.clicked.connect(self.MakeCruise)
 
         # Расчет переменных
         self.main.buCalWing.clicked.connect(self.CalculateWing)
@@ -204,6 +295,13 @@ class ExampleApp(QtWidgets.QMainWindow):
         self.main.buCalFuselage.clicked.connect(self.CalculateFuselage)
         self.main.buCalGondola.clicked.connect(self.CalculateGondola)
         self.main.buCommonDataSafe.clicked.connect(self.SafeCommonData)
+
+    def ButtonEnabled(self):
+        self.pressedWing()
+        self.main.buWing.setEnabled(True)
+        self.main.buWing.setStyleSheet("background-color: #555555;")
+
+
 
     # ОПРЕДЕЛЕНИЕ ПЕРЕМЕННОЙ Кх ПО ГРАФИКУ
     def find_Kx(self, n, x_degree):
@@ -266,7 +364,7 @@ class ExampleApp(QtWidgets.QMainWindow):
         pH = float(pHstr)
         aH = float(aHstr)
 
-        print('pH = '+str(pH))
+        print('pH = ' + str(pH))
         print('aH = ' + str(aH))
 
     # ОПРЕДЕЛЕНИЕ Gm ПО ТАБЛИЦЕ
@@ -285,7 +383,7 @@ class ExampleApp(QtWidgets.QMainWindow):
     def findGm(self):
         if type == 'ТРД':
             Sql_request = 'SELECT ТРД FROM "Полный запас топлива Gm" ' \
-                      'WHERE "Gвзл, кг" = %s' % self.whatWeight(Gvzl)
+                          'WHERE "Gвзл, кг" = %s' % self.whatWeight(Gvzl)
             self.cursor.execute(Sql_request)
         elif type == 'ТВД и ПД':
             Sql_request = 'SELECT "ТВД и ПД" FROM "Полный запас топлива Gm" ' \
@@ -297,20 +395,18 @@ class ExampleApp(QtWidgets.QMainWindow):
     # ОПРЕДЕЛЕНИЕ Kn ПО ГРАФИКУ
     def find_Kn(self, n):
         list_n = [1, 1.3, 1.5, 1.8, 2.7, 3]
-        global Kn
-        Kn = 0
-        index = 0
+        index = -1
         if n > 3:
-            Kn = -0.01 * n + 0.96
+            return -0.01 * n + 0.96
         else:
             if n in list_n:
                 Sql_request = 'SELECT kn FROM Коэф_Kn ' \
                               'WHERE n = %s' % n
                 self.cursor.execute(Sql_request)
-                Kn = float(self.cursor.fetchone()[0])
+                return float(self.cursor.fetchone()[0])
             else:
                 i = 0
-                while index == 0:
+                while index == -1:
                     if n > list_n[i] and n < list_n[i + 1]:
                         index = i
                     else:
@@ -323,17 +419,13 @@ class ExampleApp(QtWidgets.QMainWindow):
                               'WHERE n = %s' % list_n[index + 1]
                 self.cursor.execute(Sql_request)
                 second = float(self.cursor.fetchone()[0])
-                Kn = (first + second) / 2
-        Kn = float('%.3f' % Kn)
-        print('Kn = '+ str(Kn))
+                return (first + second) / 2
 
     # ОПРЕДЕЛЕНИЕ Cya max профиля ПО ГРАФИКУ
 
     # ОПРЕДЕНИЕ КОЭФ Cyamax
     def ChooseCymaxprof(self, c_, Re):
         # Выборка
-        print('Re = '+str(Re))
-        print('c_ = '+str(c_))
         list_c_ = [0.08, 0.1, 0.12, 0.14, 0.16, 0.18, 0.2]
         list_Re = [1, 2, 3, 4, 5, 6, 7, 8]
         if c_ in list_c_:
@@ -349,18 +441,16 @@ class ExampleApp(QtWidgets.QMainWindow):
                 Sql_request = 'SELECT Cyamaxprof FROM Коэф_Cyamaxprof ' \
                               'WHERE Re = %s AND Толщина= %s' % (Re, c_)
                 self.cursor.execute(Sql_request)
-                Cyamaxprof = float(self.cursor.fetchone()[0])
-                return Cyamaxprof
+                return float(self.cursor.fetchone()[0])
             elif Re > 8:
                 Sql_request = 'SELECT Cyamaxprof FROM Коэф_Cyamaxprof ' \
                               'WHERE Re = %s AND Толщина= %s' % (8, c_)
                 self.cursor.execute(Sql_request)
-                Cyamaxprof = float(self.cursor.fetchone()[0])
-                return Cyamaxprof
+                return float(self.cursor.fetchone()[0])
             else:
                 i = 0
-                index = 0
-                while index == 0:
+                index = -1
+                while index == -1:
                     if list_Re[i] < Re < list_Re[i + 1]:
                         index = i
                     else:
@@ -375,26 +465,29 @@ class ExampleApp(QtWidgets.QMainWindow):
                 self.cursor.execute(Sql_request)
                 second = float(self.cursor.fetchone()[0])
                 # print(second)
-                Cyamaxprof = float('%.3f' % ((first + second) / 2))
-                return Cyamaxprof
+                return float('%.3f' % ((first + second) / 2))
 
     def find_Cyamaxprof(self):
-        global Cyamaxprof
+        global Cyamaxprof, Re, Vmin
         v0 = 0.000014607  # коэф кинематической вязкости на высоте 0
         # определение числа Рейнольдса
         Vmin = 3.5 * math.sqrt(Gpol / S)
         Re_full = (Vmin * b) / v0
         Re = float('%.1f' % (Re_full / 10 ** 6))
+        print('Re = ' + str(Re))
+        print('c_ = ' + str(c_))
 
         # Вызов функции
         list_c_ = [0.08, 0.1, 0.12, 0.14, 0.16, 0.18, 0.2]
         if c_ in list_c_:
             Cyamaxprof = self.ChooseCymaxprof(c_, Re)
-            print('Cyamaxprof = '+ str(Cyamaxprof))
+            print('Cyamaxprof = ' + str(Cyamaxprof))
+        elif c_ < 0.08:
+            Cyamaxprof = self.ChooseCymaxprof(0.08, Re)
         else:
             i = 0
-            index = 0
-            while index == 0:
+            index = -1
+            while index == -1:
                 if list_c_[i] < c_ < list_c_[i + 1]:
                     index = i
                 else:
@@ -402,34 +495,58 @@ class ExampleApp(QtWidgets.QMainWindow):
             first = self.ChooseCymaxprof(list_c_[index], Re)
             second = self.ChooseCymaxprof(list_c_[index + 1], Re)
             Cyamaxprof = float('%.3f' % ((first + second) / 2))
-            print('Cyamaxprof = '+ str(Cyamaxprof))
+            print('Cyamaxprof = ' + str(Cyamaxprof))
 
-    # ОПРЕДЕЛЕНИЕ приращения взлетного угла
-    def find_da0_vzl(self, bzak_):
-        global deltavzl
-        print('deltavzl = ' + str(deltavzl))
-        list_b_ = [0.1,0.2,0.3]
+    # ВЫЗОВ ФУНКЦИИ .ОПРЕДЕЛЕЛЕНИЯ ПРИРАЩЕНИЯ УГЛА. взависимости от относ хорды закрылков
+    def call_da0(self, delta):
+        list_bzak_ = [0.1, 0.2, 0.3]
+        if bzak_ in list_bzak_:
+            return (-1) * self.find_da0(bzak_, delta)
+        elif bzak_ > 0.3:
+            return (-1) * self.find_da0(0.3, delta)
+        else:
+            i = 0
+            index = -1
+            while index == -1:
+                if list_bzak_[i] < bzak_ < list_bzak_[i + 1]:
+                    index = i
+                    first = self.find_da0(list_bzak_[index], delta)
+                    second = self.find_da0(list_bzak_[index + 1], delta)
+                    if (bzak_ * 100) % 10 == 5:
+                        return (-1) * float('%.3f' % ((first + second) / 2))
+                    elif (bzak_ * 100) % 10 < 5:
+                        middle_a0_vzl = float('%.3f' % ((first + second) / 2))
+                        return (-1) * float('%.3f' % ((first + middle_a0_vzl) / 2))
+                    elif (bzak_ * 100) % 10 > 5:
+                        middle_a0_vzl = float('%.3f' % ((first + second) / 2))
+                        return (-1) * float('%.3f' % ((second + middle_a0_vzl) / 2))
+                else:
+                    i = i + 1
+
+    # ОПРЕДЕЛЕНИЕ ПРИРАЩЕНИЯ УГЛА (взлетного и посадочного)
+    def find_da0(self, bzak_, delta):
+        list_b_ = [0.1, 0.2, 0.3]
         list_delta = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.2, 1.3]
         if bzak_ in list_b_:
-            if bzak_ == 0.1 and 0 <= deltavzl <= 0.6:
-                return 0.158 * deltavzl + 0.0022
-            elif bzak_ == 0.2 and 0 <= deltavzl <= 0.5:
-                return 0.225 * deltavzl + 0.0125
-            elif deltavzl in list_delta:
+            if bzak_ == 0.1 and 0 <= delta <= 0.6:
+                return 0.158 * delta + 0.0022
+            elif bzak_ == 0.2 and 0 <= delta <= 0.5:
+                return 0.225 * delta + 0.0125
+            elif delta in list_delta:
                 Sql_request = 'SELECT delta_a0 FROM "Приращение взлетного угла" ' \
-                              'WHERE b_zak = %s AND бvzl_pos= %s' % (bzak_, deltavzl)
+                              'WHERE b_zak = %s AND бvzl_pos= %s' % (bzak_, delta)
                 self.cursor.execute(Sql_request)
                 return float(self.cursor.fetchone()[0])
-            elif deltavzl > 1.3:
+            elif delta > 1.3:
                 Sql_request = 'SELECT delta_a0 FROM "Приращение взлетного угла" ' \
                               'WHERE b_zak = %s AND бvzl_pos= %s' % (bzak_, 1.3)
                 self.cursor.execute(Sql_request)
                 return float(self.cursor.fetchone()[0])
             else:
                 i = 0
-                index = 0
-                while index == 0:
-                    if list_delta[i] < deltavzl < list_delta[i + 1]:
+                index = -1
+                while index == -1:
+                    if list_delta[i] < delta < list_delta[i + 1]:
                         index = i
                     else:
                         i = i + 1
@@ -439,7 +556,7 @@ class ExampleApp(QtWidgets.QMainWindow):
                 first = float(self.cursor.fetchone()[0])
                 # print(first)
                 Sql_request = 'SELECT delta_a0 FROM "Приращение взлетного угла" ' \
-                              'WHERE b_zak = %s AND бvzl_pos= %s' % (bzak_, list_delta[index+1])
+                              'WHERE b_zak = %s AND бvzl_pos= %s' % (bzak_, list_delta[index + 1])
                 self.cursor.execute(Sql_request)
                 second = float(self.cursor.fetchone()[0])
                 # print(second)
@@ -467,44 +584,48 @@ class ExampleApp(QtWidgets.QMainWindow):
     def pressedCommonData(self):
         self.main.tabWidget_2.setCurrentIndex(6)
 
-    def pressedDown(self):
-        self.main.tabWidget.setCurrentIndex(3)
+    def OpenPlan(self):
+        dlg = DialogPlan(self)
+        dlg.show()
 
-    def pressedCre(self):
-        self.main.tabWidget.setCurrentIndex(4)
+    def OpenFlapChoose(self):
+        dialog = DialogMechanism(self)
+        dialog.show()
 
     # РАСЧЕТ ИСХОДНЫХ ДАННЫХ КРЫЛА
     def CalculateWing(self):
+        self.main.buFlapMulard.setEnabled(True)
+        self.main.buFlapMulard.setStyleSheet("background-color: #555555;")
 
         # Хорда средняя
         global l, S, b
-        l = float(self.main.ed_l.text())
-        S = float(self.main.ed_S.text())
+        l = float(self.main.ed_l.text().replace(',','.'))
+        S = float(self.main.ed_S.text().replace(',','.'))
         b = float('%.3f' % (S / l))
         self.main.ed_b.setText(str(b))
 
         # Сужение
         global b0, bk, n
-        b0 = float(self.main.ed_b0.text())
-        bk = float(self.main.ed_bk.text())
+        b0 = float(self.main.ed_b0.text().replace(',','.'))
+        bk = float(self.main.ed_bk.text().replace(',','.'))
         n = float('%.2f' % (b0 / bk))
         self.main.ed_n.setText(str(n))
 
         # Относительная толщина профиля
         global cmax, c_
-        cmax = float(self.main.ed_cmax.text())
-        c_ = float('%.3f' % (cmax / b))
+        cmax = float(self.main.ed_cmax.text().replace(',','.'))
+        c_ = float('%.2f' % (cmax / b))
         self.main.ed_c_.setText(str(c_))
 
         # Относительная координата максимальной толщины
         global xc, xc_
-        xc = float(self.main.ed_xc.text())
+        xc = float(self.main.ed_xc.text().replace(',','.'))
         xc_ = float('%.3f' % (xc / b))
         self.main.ed_xc_.setText(str(xc_))
 
         # Относительная кривизна профиля
         global fmax, f_
-        fmax = float(self.main.ed_fmax.text())
+        fmax = float(self.main.ed_fmax.text().replace(',','.'))
         f_ = float('%.3f' % (100 * fmax / b))
         self.main.ed_f_.setText(str(f_))
 
@@ -516,7 +637,7 @@ class ExampleApp(QtWidgets.QMainWindow):
 
         # Относительная координата фокуса профиля
         global xf, xf_
-        xf = float(self.main.ed_xf.text())
+        xf = float(self.main.ed_xf.text().replace(',','.'))
         xf_ = float('%.3f' % (xf / b))
         self.main.ed_xf_.setText(str(xf_))
 
@@ -527,19 +648,19 @@ class ExampleApp(QtWidgets.QMainWindow):
 
         # Относительная площадь, занятая фюзеляжем
         global Sf, Sf_
-        Sf = float(self.main.ed_Sf.text())
+        Sf = float(self.main.ed_Sf.text().replace(',','.'))
         Sf_ = float('%.3f' % (Sf / S))
         self.main.ed_Sf_.setText(str(Sf_))
 
         # Относительная площадь, занятая гондолами двигателей
         global Sgd, Sgd_
-        Sgd = float(self.main.ed_Sgd.text())
+        Sgd = float(self.main.ed_Sgd.text().replace(',','.'))
         Sgd_ = float('%.3f' % (Sgd / S))
         self.main.ed_Sgd_.setText(str(Sgd_))
 
         # Относительная площадь, занятая гондолами шасси
         global Sgsh, Sgsh_
-        Sgsh = float(self.main.ed_Sgsh.text())
+        Sgsh = float(self.main.ed_Sgsh.text().replace(',','.'))
         Sgsh_ = float('%.3f' % (Sgsh / S))
         self.main.ed_Sgsh_.setText(str(Sgsh_))
 
@@ -550,7 +671,7 @@ class ExampleApp(QtWidgets.QMainWindow):
 
         # Удлинение эффективное
         global lamdaef, Kx, x_degree
-        x_degree = int(self.main.ed_x_deg.text())
+        x_degree = float(self.main.ed_x_deg.text().replace(',','.'))
         self.find_Kx(n, x_degree)
         expression = (lamda * Kx) / (1 + S_)
         lamdaef = float('%.3f' % expression)
@@ -558,14 +679,14 @@ class ExampleApp(QtWidgets.QMainWindow):
 
         # Производная коэф подъемной силы по углу атаки
         global caya, xc_degree
-        xc_degree = float(self.main.ed_Sgsh.text()) * math.pi / 180
+        xc_degree = float(self.main.ed_xc_deg.text().replace(',','.')) * math.pi / 180
         expression = (2 * math.pi * lamdaef * math.cos(xc_degree)) / (57.3 * (lamdaef + 2 * math.cos(xc_degree)))
         caya = float('%.3f' % expression)
-        self.main.ed_caya.setText(str(caya))  # есть разница !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        self.main.ed_caya.setText(str(caya))
 
         # Относительная площадь, обдуваемая винтами
         global Sobd, Sobd_
-        Sobd = float(self.main.ed_Sobd.text())
+        Sobd = float(self.main.ed_Sobd.text().replace(',','.'))
         Sobd_ = float('%.3f' % (Sobd / S))
         self.main.ed_Sobd_.setText(str(Sobd_))
 
@@ -583,62 +704,67 @@ class ExampleApp(QtWidgets.QMainWindow):
 
         # Определение переменных
         global h
-        h = float(self.main.ed_h.text())
+        h = float(self.main.ed_h.text().replace(',','.'))
 
     # РАСЧЕТ ЗАКРЫЛОК И ПРЕДКРЫЛОК
     def CalculateFlapMulard(self):
+        self.main.buTail.setEnabled(True)
+        self.main.buTail.setStyleSheet("background-color: #555555;")
 
         # Определение переменных
         global xshzak
-        xshzak = float(self.main.ed_xshzak.text())
+        xshzak = float(self.main.ed_xshzak.text().replace(',','.'))
 
         # Относительная хорда закрылки
         global bzak, bzak_
-        bzak = float(self.main.ed_bzak.text())
+        bzak = float(self.main.ed_bzak.text().replace(',','.'))
         bzak_ = float('%.2f' % (bzak / b))
         self.main.ed_bzak_.setText(str(bzak_))
 
         # Относ площадь крыла, обслуживаемая закрылками
         global Sobzak, Sobzak_
-        Sobzak = float(self.main.ed_Sobzak.text())
+        Sobzak = float(self.main.ed_Sobzak.text().replace(',','.'))
         Sobzak_ = float('%.3f' % (Sobzak / S))
         self.main.ed_Sobzak_.setText(str(Sobzak_))
 
         # Хорда средняя крыла с выпущенными закрылком
         global bsrzak, lzak
-        lzak = float(self.main.ed_lzak.text())
+        lzak = float(self.main.ed_lzak.text().replace(',','.'))
         bsrzak = float('%.3f' % (Sobzak / lzak))
         self.main.ed_bsrzak.setText(str(bsrzak))
 
         # Расстояние от края закрылка до земли при взлете
         global deltavzl, hvzl
-        deltavzl = float(self.main.ed_deltavzl.text()) * math.pi / 180
-        hvzl = ('%.3f' % (h - math.sin(deltavzl) * bzak))  # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        deltavzl = float(self.main.ed_deltavzl.text().replace(',','.')) * math.pi / 180
+        hvzl = float('%.3f' % (h - math.sin(deltavzl) * bzak))  # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         self.main.ed_hvzl.setText(str(hvzl))
 
         # Расстояние от края закрылка до земли при посадке
         global deltapos, hpos
-        deltapos = float(self.main.ed_deltapos.text()) * math.pi / 180
-        hpos = ('%.3f' % (h - math.sin(deltapos) * bzak))  # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        deltapos = float(self.main.ed_deltapos.text().replace(',','.')) * math.pi / 180
+        hpos = float('%.3f' % (h - math.sin(deltapos) * bzak))  # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         self.main.ed_hpos.setText(str(hpos))
 
         # Относ площадь крыла, обслуживаемая предкрылком
         global Sobpr, Sobpr_
-        Sobpr = float(self.main.ed_Sobpr.text())
+        Sobpr = float(self.main.ed_Sobpr.text().replace(',','.'))
         Sobpr_ = float('%.3f' % (Sobpr / S))
         self.main.ed_Sobpr_.setText(str(Sobpr_))
 
     # РАСЧЕТ ГОРИЗОНТ И ВЕРТИКАЛ ОПЕРЕНИЯ
     def CalculateTail(self):
+        self.main.buPylon.setEnabled(True)
+        self.main.buPylon.setStyleSheet("background-color: #555555;")
+
         # Определение переменных
         global bgo, xgo, bv, Sv, bvo, lvo, Svo
-        bgo = float(self.main.ed_bgo.text())
-        xgo = float(self.main.ed_xgo.text())
-        bv = float(self.main.ed_bv.text())
-        Sv = float(self.main.ed_Sv.text())
-        bvo = float(self.main.ed_bvo.text())
-        lvo = float(self.main.ed_lvo.text())
-        Svo = float(self.main.ed_Svo.text())
+        bgo = float(self.main.ed_bgo.text().replace(',','.'))
+        xgo = float(self.main.ed_xgo.text().replace(',','.'))
+        bv = float(self.main.ed_bv.text().replace(',','.'))
+        Sv = float(self.main.ed_Sv.text().replace(',','.'))
+        bvo = float(self.main.ed_bvo.text().replace(',','.'))
+        lvo = float(self.main.ed_lvo.text().replace(',','.'))
+        Svo = float(self.main.ed_Svo.text().replace(',','.'))
 
         # Относительная толщина горизонт и вертикал оперения
         global cgo_, cvo_
@@ -648,29 +774,35 @@ class ExampleApp(QtWidgets.QMainWindow):
 
         # Удлинение гор оперения
         global lgo, Sgo, lamdago
-        lgo = float(self.main.ed_lgo.text())
-        Sgo = float(self.main.ed_Sgo.text())
+        lgo = float(self.main.ed_lgo.text().replace(',','.'))
+        Sgo = float(self.main.ed_Sgo.text().replace(',','.'))
         lamdago = float('%.3f' % (lgo ** 2 / Sgo))
         self.main.ed_lamdago.setText(str(lamdago))
 
     # ОПРЕДЕЛЕНИЕ ПЕРЕМЕННЫХ ПИЛОНА
     def CalculatePylon(self):
+        self.main.buFuselage.setEnabled(True)
+        self.main.buFuselage.setStyleSheet("background-color: #555555;")
+
         global bp, cp_, Sp
-        bp = float(self.main.ed_bp.text())
-        cp_ = float(self.main.ed_cp_.text())
-        Sp = float(self.main.ed_Sp.text())
+        bp = float(self.main.ed_bp.text().replace(',','.'))
+        cp_ = float(self.main.ed_cp_.text().replace(',','.'))
+        Sp = float(self.main.ed_Sp.text().replace(',','.'))
 
     # РАСЧЕТ ДАННЫХ ФЮЗЕЛЯЖА
     def CalculateFuselage(self):
+        self.main.buGondola.setEnabled(True)
+        self.main.buGondola.setStyleSheet("background-color: #555555;")
+
         # Диаметр миделя
         global Df, Smf
-        Smf = float(self.main.ed_Smf.text())
+        Smf = float(self.main.ed_Smf.text().replace(',','.'))
         Df = float('%.3f' % (math.sqrt(4 * Smf / math.pi)))
         self.main.ed_Df.setText(str(Df))
 
         # Удлинение
         global lamdaf, lf
-        lf = float(self.main.ed_lf.text())
+        lf = float(self.main.ed_lf.text().replace(',','.'))
         lamdaf = float('%.3f' % (lf / Df))
         self.main.ed_lamdaf.setText(str(lamdaf))
 
@@ -681,7 +813,7 @@ class ExampleApp(QtWidgets.QMainWindow):
 
         # Удлинение носовой части
         global lnf, lamdanf
-        lnf = float(self.main.ed_lnf.text())
+        lnf = float(self.main.ed_lnf.text().replace(',','.'))
         lamdanf = float('%.3f' % (lnf / Df))
         self.main.ed_lamdanf.setText(str(lamdanf))
 
@@ -690,8 +822,8 @@ class ExampleApp(QtWidgets.QMainWindow):
 
         # Удлинение гондола двигателя
         global lgd, Dgd, lamdagd
-        lgd = float(self.main.ed_lgd.text())
-        Dgd = float(self.main.ed_Dgd.text())
+        lgd = float(self.main.ed_lgd.text().replace(',','.'))
+        Dgd = float(self.main.ed_Dgd.text().replace(',','.'))
         lamdagd = float('%.3f' % (lgd / Dgd))
         self.main.ed_lamdagd.setText(str(lamdagd))
 
@@ -702,14 +834,14 @@ class ExampleApp(QtWidgets.QMainWindow):
 
         # Удлинение удлинение носовой части гондола двигателя
         global ln_gd, lamdan_gd
-        ln_gd = float(self.main.ed_lngd.text())
+        ln_gd = float(self.main.ed_lngd.text().replace(',','.'))
         lamdan_gd = float('%.3f' % (ln_gd / Dgd))
         self.main.ed_lamdangd.setText(str(lamdan_gd))
 
         # Удлинение гондола шасси
         global lgsh, Dgsh, lamdagsh
-        lgsh = float(self.main.ed_lgsh.text())
-        Dgsh = float(self.main.ed_Dgsh.text())
+        lgsh = float(self.main.ed_lgsh.text().replace(',','.'))
+        Dgsh = float(self.main.ed_Dgsh.text().replace(',','.'))
         lamdagsh = float('%.3f' % (lgsh / Dgsh))
         self.main.ed_lamdagsh.setText(str(lamdagsh))
 
@@ -720,18 +852,23 @@ class ExampleApp(QtWidgets.QMainWindow):
 
         # Удлинение удлинение носовой части гондола шасси
         global ln_gsh, lamdan_gsh
-        ln_gsh = float(self.main.ed_lngsh.text())
+        ln_gsh = float(self.main.ed_lngsh.text().replace(',','.'))
         lamdan_gsh = float('%.3f' % (ln_gsh / Dgsh))
         self.main.ed_lamdangsh.setText(str(lamdan_gsh))
 
     # СОХРАНЕНИЕ ОБЩИХ ДАННЫХ
     def SafeCommonData(self):
-        global Gvzl, V, number, P0, H
-        Gvzl = float(self.main.ed_Gvzl.text())
+        self.main.buMkr.setEnabled(True)
+        self.main.buMkr.setStyleSheet("background-color: #555555;")
+
+        global Gvzl, V, number, P0, H, Dv, Fv
+        Dv = float(self.main.ed_Dv.text().replace(',','.'))
+        Fv = float('%.3f' % (math.pi * Dv * Dv / 4))
+        Gvzl = float(self.main.ed_Gvzl.text().replace(',','.'))
         V = float(self.main.ed_V.text())
-        number = float(self.main.ed_number.text())
-        P0 = float(self.main.ed_P0.text())
-        H = float(self.main.ed_H.text())
+        number = float(self.main.ed_number.text().replace(',','.'))
+        P0 = float(self.main.ed_P0.text().replace(',','.'))
+        H = float(self.main.ed_H.text().replace(',','.'))
         self.find_with_H(H)
 
         # Тип двигателей
@@ -749,26 +886,27 @@ class ExampleApp(QtWidgets.QMainWindow):
     # РАСЧЕТ И ПОСТРОЕНИЕ КРИВОЙ ЗАВИСИМОСТИ Мкр
     def MakeMkr(self):
         self.main.tabWidget.setCurrentIndex(0)
+        self.main.buHelp.setEnabled(True)
+        self.main.buHelp.setStyleSheet("background-color: #555555; height: 30px;")
+
         # Расчет координат вспомогательной прямой
         arr_cya = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7]
         arr_Mkr = []
         for cya in arr_cya:
             expression = 1 - 0.445 * math.pow(lamdaef - 1, 1 / 9) * (0.175 + 3.25 * c_) * (
-                        math.cos(x_degree * math.pi / 180) + (0.365 * cya ** 2) / math.cos(
-                    x_degree * math.pi / 180) ** 5)
+                    math.cos(x_degree * math.pi / 180) + (0.365 * cya ** 2) / math.cos(
+                x_degree * math.pi / 180) ** 5)
             arr_Mkr.append(float('%.3f' % expression))
-        print('Mkr = ' + str(arr_Mkr))
 
         # Занесение координат в БД
         arr = []
-        arr_ =[0,1]
+        arr_ = [0, 1]
         for i in range(8):
             arr_[0] = arr_cya[i]
             arr_[1] = arr_Mkr[i]
             arr.append(tuple(arr_))
         cor = tuple(arr)
-        # print(cor)
-        self.cursor.execute('DELETE FROM "Кривая зависимость Мкр";',)
+        self.cursor.execute('DELETE FROM "Кривая зависимость Мкр";', )
         sqlite_insert_query = """INSERT INTO 'Кривая зависимость Мкр'
                                          (Cya, Мкр) VALUES (?, ?);"""
         self.cursor.executemany(sqlite_insert_query, cor)
@@ -793,11 +931,11 @@ class ExampleApp(QtWidgets.QMainWindow):
         self.main.tableWidget_Mkr.setColumnCount(9)
         for row in self.cursor.execute(SQLquery):
             for col in range(2):
-                    item = QtWidgets.QTableWidgetItem(str(row[col]))
-                    tablerow = col
-                    item.setTextAlignment(QtCore.Qt.AlignCenter)
-                    item.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
-                    self.main.tableWidget_Mkr.setItem(tablerow, tablecol, item)
+                item = QtWidgets.QTableWidgetItem(str(row[col]))
+                tablerow = col
+                item.setTextAlignment(QtCore.Qt.AlignCenter)
+                item.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
+                self.main.tableWidget_Mkr.setItem(tablerow, tablecol, item)
             tablecol = tablecol + 1
 
         item1 = QtWidgets.QTableWidgetItem('Cya')
@@ -806,24 +944,30 @@ class ExampleApp(QtWidgets.QMainWindow):
         self.main.tableWidget_Mkr.setItem(1, 0, item2)
 
         # Расчет точки ?????
-        Vms = float('%.3f' % (V / 3.6)) # км/ч в м/с
-        Mrasch = float('%.4f' % (Vms / aH)) # определение расчетного числа маха
-        global Gpol
+        global Gpol, Mrasch
+        Vms = float('%.3f' % (V / 3.6))  # км/ч в м/с
+        Mrasch = float('%.4f' % (Vms / aH))  # определение расчетного числа маха
         Gpol = Gvzl - 0.5 * Gm
         cya_rasch = float('%.4f' % ((2 * Gpol * g) / (pH * Vms * Vms * S)))
 
-        print('cya_rasch = '+ str(cya_rasch))
-        print('Mrasch = ' + str(Mrasch))
+        # Отображение найденных переменных
+        self.main.la_Mrasch_Mkr.setText(str(Mrasch))
+        self.main.la_Gpol_Mkr.setText(str(Gpol))
+        self.main.la_Cyarasch_Mkr.setText(str(cya_rasch))
 
+        # Отрисовка
         self.figure.clear()
         ax = self.figure.add_subplot(111)
         # plot data
-        ax.plot(arr_cya, arr_Mkr,color = 'k', label='Мкр = f(cya)')
-        ax.plot(cya_rasch, Mrasch, marker='.',color = 'navy', label = '')
+        ax.plot(arr_cya, arr_Mkr, color='k', label='Мкр = f(cya)')
+        ax.plot(cya_rasch, Mrasch, marker='.', color='navy', label='')
 
-        ax.text(cya_rasch, Mrasch, '  A(Мрасч;Суа расч)', rotation=0 ,fontsize=7)
-        ax.legend(loc = 'lower left')
-        ax.set_title('Кривая зависимости Мкр = f(cya)', loc = 'right', pad = 5, fontsize = 11)
+        ax.text(cya_rasch, Mrasch, '  A(Мрасч;Суа расч)', rotation=0, fontsize=7)
+        ax.legend(loc='lower left')
+        ax.set_title('Кривая зависимости Мкр = f(cya)', loc='right', pad=5, fontsize=11)
+
+
+
         # ax.set_xlabel('Суа')
         # ax.set_ylabel('Мкр')
         # ax.vlines(cya_rasch, arr_Mkr[7], Mrasch, color='lightgray',linewidth=1,linestyle='--')
@@ -832,105 +976,329 @@ class ExampleApp(QtWidgets.QMainWindow):
 
     # ПОСТРОЕНИЕ ВСПОМОГАТЕЛЬНОЙ КРИВОЙ cya = f(a)
     def MakeHelp(self):
+        self.main.buUp.setEnabled(True)
+        self.main.buUp.setStyleSheet("background-color: #555555; height: 30px;")
+
         self.main.tabWidget.setCurrentIndex(1)
         self.fhelp.clear()
         ax = self.fhelp.add_subplot(111)
 
         # Линейный участок, характеризующий безотрывное обтекания крыла
-        alfa_px2 = 5 # произвольно
-        cya_py2 = caya * (alfa_px2 - a0)
+        # Точка 1 - (а0, 0)
 
+        # Точка 2 - (а, суа)
+        alfa_px2 = 5  # произвольно
+        cya_py2 = float('%.3f' % (caya * (alfa_px2 - a0)))
+
+        # Точка 4 - (а, суа_max)
         # Коэф cya max
-        global Cyamax
-        self.find_Kn(n)
-        # print(Kn)
+        global Kn, Cyamax
+        Kn = float('%.3f' % self.find_Kn(n))
+        print('Kn = ' + str(Kn))
         self.find_Cyamaxprof()
-        Cyamax = float ('%.3f' % (Cyamaxprof * Kn * (1 + math.cos(x_degree * math.pi/180))/ 2))
-        cya_py3 = 0.85 * Cyamax
+        Cyamax = float('%.3f' % (Cyamaxprof * Kn * (1 + math.cos(x_degree * math.pi / 180)) / 2))
         print('Cyamax = ' + str(Cyamax))
+        k = cya_py2 / (alfa_px2 - a0)
+        b = (-1) * k * a0
+        px4 = float('%.3f' % ((Cyamax - b) / k))
 
-        px3 = (cya_py3*(alfa_px2 - a0) + a0*cya_py2)/cya_py2
-        # print(px3)
-        px4 = (Cyamax*(alfa_px2 - a0) + a0*cya_py2)/cya_py2
-        # print(px4)
-        py = Cyamax - (Cyamax-cya_py3)
+        # Точка 3 - (x, 0.85 * суа_max)
+        cya_py3 = float('%.3f' % (0.85 * Cyamax))
+        px3 = float('%.3f' % ((cya_py3 - b) / k))
 
-        deltaalfa= 2 # !!! произвольно
+        # Точка 5 - (deltaalfa ,суа_max)
+        deltaalfa = 2  # !!! произвольно
         px5 = px4 + deltaalfa
+        py5 = Cyamax
 
+        # Отображение найденных переменных
+        self.main.la_1_help.setText('(' + str(a0) + '; ' + str(0) + ')')
+        self.main.la_2_help.setText('(' + str(alfa_px2) + '; ' + str(cya_py2) + ')')
+        self.main.la_3_help.setText('(' + str(px3) + '; ' + str(cya_py3) + ')')
+        self.main.la_4_help.setText('(' + str(px4) + '; ' + str(Cyamax) + ')')
+        self.main.la_5_help.setText('(' + str(px5) + '; ' + str(Cyamax) + ')')
+
+        self.main.la_Re_help.setText(str(Re))
+        self.main.la_Vmin_help.setText(str(float('%.3f' % Vmin)))
+        self.main.la_Cyamaxprof_help.setText(str(Cyamaxprof))
+        self.main.la_Kn_help.setText(str(Kn))
+
+        # Отрисовка
+        arrX_ = [a0, alfa_px2, px3, px4]
+        arrY_ = [0, cya_py2, cya_py3, Cyamax]
+        ax.plot(arrX_, arrY_, '--', label='Cya=f(a)_', color='k')
         arrX = [a0, alfa_px2, px3]
         arrY = [0, cya_py2, cya_py3]
-        # plot data
-        ax.plot(arrX, arrY, label = 'Cya=f(a)', color='k')
+        ax.plot(arrX, arrY, label='Cya=f(a)', color='k')
+
         ax.plot(a0, 0, marker='.')
         ax.plot(alfa_px2, cya_py2, marker='.')
         ax.plot(px3, cya_py3, marker='.')
         ax.plot(px4, Cyamax, marker='.')
-        ax.plot(px5, Cyamax, marker='.')
+        ax.plot(px5, py5, marker='.')
+
+        # x=np.array( [px3,px5])
+        # y = np.array([cya_py3, Cyamax])
+        # x_new = np.linspace(x.min(), x.max(), 500)
+        # f = interpolate.interp1d(x, y, kind='quadratic')
+        # y_smooth = f(x_new)
+        # ax.plot(x_new, y_smooth)
 
         ax.set_title('Вспомогательная кривая Cya = f(a)', loc='right', pad=5, fontsize=11)
         ax.legend(loc='lower right')
         # arc = matplotlib.patches.Arc((px5, cya_py3), deltaalfa*2, (Cyamax-cya_py3)*2, 180, 270)
 
-
         # ax.add_patch(arc)
         self.chelp.draw()
 
+    # ПОСТРОЕНИЕ ВЗЛЕТНОЙ КРИВОЙ (С УЧЕТОМ И БЕЗ УЧЕТА ВЛИЯНИЯ ЭКРАНА ЗЕМЛИ)
     def MakeUp(self):
         self.main.tabWidget.setCurrentIndex(2)
-        dCyamax_pr = 0
-        global g
-        da0_vzl=0
+        self.main.buDown.setEnabled(True)
+        self.main.buDown.setStyleSheet("background-color: #555555; height: 30px;")
+
+        # 1) Без учета влияния экрана земли
+
+        # Определение переменных по графикам и таблицам (dCyamax и da0_vzl)
+        global da0_vzl, dCyamax
+        Sql_request = 'SELECT deltaCyamax FROM Закрылки WHERE Тип_механизации = %s' % '"' + Flap_type + '"'
+        self.cursor.execute(Sql_request)
+        dCyamax = float(self.cursor.fetchone()[0])  # ВЗЯТЬ ВСЕ СТОЛБЦЫ С БД
+        da0_vzl = self.call_da0(deltavzl)  # определение приращения угла атаки нулевой подъемной силы в радианах
+
         # Преращение коэф подъем силы от выпуска предкрылков
-        if Sobpr_ != 0:
-            dCyamax_pr = 0.6*Sobpr_
-            print('dCyamax_pr = '+ str(dCyamax_pr))
+        dCyamax_pr = 0.6 * Sobpr_
+
         # Преращение коэф подъем силы от выпуска закрылков
-        list_bzak_ = [0.1, 0.2, 0.3]
-        if Sobzak_ != 0:
-            if bzak_ in list_bzak_:
-                da0_vzl =(-1)*  self.find_da0_vzl(bzak_)
-                print('da0_vzl=' + str(da0_vzl))
-            elif bzak_ > 0.3:
-                da0_vzl =(-1)*  self.find_da0_vzl(0.3)
-                print('da0_vzl=' + str(da0_vzl))
-            else:
-                i = 0
-                index = 0
-                while index == 0:
-                    if list_bzak_[i] < bzak_ < list_bzak_[i + 1]:
-                        index = i
-                        first = self.find_da0_vzl(list_bzak_[index])
-                        second = self.find_da0_vzl(list_bzak_[index + 1])
-                        if (bzak_*100) % 10 == 5:
-                            da0_vzl =(-1)* float('%.3f' % ((first + second) / 2))
-                            print('da0_vzl=' + str(da0_vzl))
-                        elif (bzak_ * 100) % 10 < 5:
-                            middle_a0_vzl= float('%.3f' % ((first + second) / 2))
-                            da0_vzl = (-1)* float('%.3f' % ((first + middle_a0_vzl) / 2))
-                            print('da0_vzl=' + str(da0_vzl))
-                        elif (bzak_ * 100) % 10 > 5:
-                            middle_a0_vzl = float('%.3f' % ((first + second) / 2))
-                            da0_vzl = (-1)* float('%.3f' % ((second + middle_a0_vzl) / 2))
-                            print('da0_vzl=' + str(da0_vzl))
-                    else:
-                        i = i + 1
-            dCyamax=1.4
-            if da0_vzl !=0:
-                dCyamax_zak_vzl=4.83*dCyamax*Sobzak_* abs((-1)*da0_vzl)*math.cos(xshzak*math.pi/180)*math.cos(xshzak*math.pi/180)
-           # УРАВНЕНИЯ ПРИ НАЛИЧИИ ВИНТОВ
-           # if Sobd_ != 0
-                Cyamax_vzl = Cyamax +  dCyamax_pr +  dCyamax_zak_vzl # +dCya_obd
-                a0_vzl = (a0+ da0_vzl*180/math.pi)#+da0_obd
-                print('dCyamax_zak_vzl= '+ str(dCyamax_zak_vzl))
-                print('Cyamax_vzl= '+ str(Cyamax_vzl))
-                print('a0_vzl= '+ str(a0_vzl))
+        # Sobzak_ = 0.459
+        # da0_vzl = -0.16
+
+        dCyamax_zak_vzl = float('%.3f' % (
+                4.83 * dCyamax * Sobzak_ * abs(da0_vzl) * math.cos(xshzak * math.pi / 180) * math.cos(
+            xshzak * math.pi / 180)))
+
+        # УРАВНЕНИЯ ПРИ НАЛИЧИИ ВИНТОВ
+
+        # Максимальный коэф подъемной силы при взлете
+        Cyamax_vzl = float('%.3f' % (Cyamax + dCyamax_pr + dCyamax_zak_vzl))  # +dCya_obd
+        a0_vzl = float('%.3f' % (a0 + da0_vzl * 180 / math.pi))  # +da0_obd
+
+        # Точка
+        cya = float('%.3f' % (caya * (5 - a0_vzl)))
+        k = cya / (5 - a0_vzl)
+        b = (-1) * k * a0_vzl
+        px3 = float('%.3f' % ((Cyamax_vzl - b) / k))
+
+        # Отображение найденных переменных
+        self.main.la_dCyamaxpr_Up.setText(str(dCyamax_pr))
+        self.main.la_dCyamaxzakvzl_Up.setText(str(dCyamax_zak_vzl))
+        self.main.la_dCyaobd_Up.setText(str(0))  # найти переменную с винтами
+        self.main.la_Cyamax_Up.setText(str(Cyamax))
+        self.main.la_Cyamaxvzl_Up.setText(str(Cyamax_vzl))
+        self.main.la_dCyamax_Up.setText(str(dCyamax))
+        self.main.la_da0vzl_Up.setText(str(da0_vzl))
+        self.main.la_da0obd_Up.setText(str(0))  # найти переменную с винтами
+        self.main.la_a0_Up.setText(str(a0))
+        self.main.la_a0vzl_Up.setText(str(a0_vzl))
+        self.main.la_Cya_Up.setText(str(cya))
+
+        # Отрисовка
+        self.fUp.clear()
+        ax = self.fUp.add_subplot(111)
+
+        points_a = [a0_vzl, 5]
+        points_Cya = [0, cya]
+        ax.plot(points_a, points_Cya, marker='.', color='k')
+        ax.plot(px3, Cyamax_vzl, marker='.', color='k')
+
+        # 2) С учетом влияния экрана земли
+
+        # Приращение КПС, вызванный экранным влиянияем земли
+        dCyamax_zak_vzl_scrin = float('%.3f' % (-1 * 0.115 * math.exp(-0.5 * h / bsrzak) * Cyamax_vzl))
+
+        # КПС, вызванный экранным влиянияем земли
+        Cyamax_vzl_scrin = float('%.3f' % (Cyamax_vzl + dCyamax_zak_vzl_scrin))
+
+        # Фиктивное удлинение крыла, учитывающее влияние экрана земли
+        lamdaef_scrin = float('%.3f' % ((lamdaef / 2.23) * ((math.pi * l) / (8 * hvzl) + 2)))
+
+        # Производная с учетом влияния экрана земли
+        expression = (2 * math.pi * lamdaef_scrin * math.cos(x_degree * math.pi / 180)) / (
+                57.3 * (lamdaef_scrin + 2 * math.cos(x_degree * math.pi / 180)))
+        caya_scrin = float('%.3f' % expression)
+
+        # Точка
+        cya = float('%.3f' % (caya_scrin * (5 - a0_vzl)))
+        k = cya / (5 - a0_vzl)
+        b = (-1) * k * a0_vzl
+        px3 = float('%.3f' % ((Cyamax_vzl_scrin - b) / k))
+
+        # Отображение найденных переменных
+        self.main.la_dCyamaxvzl_scrin_Up.setText(str(dCyamax_zak_vzl_scrin))
+        self.main.la_Cyamaxvzl_scrin_Up.setText(str(Cyamax_vzl_scrin))
+        self.main.la_Caya_scrin_Up.setText(str(caya_scrin))
+        self.main.la_lamda_scrin_Up.setText(str(lamdaef_scrin))
+        self.main.la_Cya_scrin_Up.setText(str(cya))
+
+        # Отрисовка
+        points_Cya[1] = cya
+        ax.plot(points_a, points_Cya, marker='.', color='k')
+        ax.plot(px3, Cyamax_vzl_scrin, marker='.')
+
+    # ПОСТРОЕНИЕ ПОСАДОЧНЫХ КРИВЫХ (С УЧЕТОМ И БЕЗ УЧЕТА ВЛИЯНИЯ ЭКРАНА ЗЕМЛИ)
+    def MakeDown(self):
+        self.main.tabWidget.setCurrentIndex(3)
+        self.main.buCre.setEnabled(True)
+        self.main.buCre.setStyleSheet("background-color: #555555; height: 30px;")
+
+        # 1) Без учета влияния экрана земли
+
+        #    Определение переменных
+        da0_pos = self.call_da0(deltapos)
+        dCyamax_pr = 0.6 * Sobpr_  # преращение коэф подъем силы от выпуска предкрылков
+
+        # Приращение КПС при выпущенных закрылках при посадке
+        # da0_pos = -0.195
+        # Sobzak_ = 0.459
+        dCya_max_zak_pos = float(
+            '%.3f' % (4.83 * dCyamax * Sobzak_ * abs(da0_pos) * (math.cos(xshzak * math.pi / 180) ** 2)))
+
+        # КПС при посадке
+        Cya_max_pos = float('%.3f' % (Cyamax + dCyamax_pr + dCya_max_zak_pos))
+        a0_pos = float('%.3f' % (a0 + da0_pos * 180 / math.pi))
+
+        # Точка
+        cya =float('%.3f' % (caya * (5 - a0_pos)))
+        k = cya / (5 - a0_pos)
+        b = -1 * k * a0_pos
+        alfa_point = float('%.3f' % ((Cya_max_pos - b) / k))
+
+        # Отображение найденных переменных
+        self.main.la_dCyamaxpr_Down.setText(str(dCyamax_pr))
+        self.main.la_dCyamaxzakpos_Down.setText(str(dCya_max_zak_pos))
+        self.main.la_Cyamax_Down.setText(str(Cyamax))
+        self.main.la_Cyamaxpos_Down.setText(str(Cya_max_pos))
+        self.main.la_dCyamax_Down.setText(str(dCyamax))
+        self.main.la_da0pos_Down.setText(str(da0_pos))
+        self.main.la_a0_Down.setText(str(a0))
+        self.main.la_a0pos_Down.setText(str(a0_pos))
+        self.main.la_Cya_Down.setText(str(cya))
+
+        # Отрисовка
+        self.fDown.clear()  # отчистка графика
+        ax = self.fDown.add_subplot(111)
+        points_a=[a0_pos, 5]
+        points_cya=[0, cya]
+        ax.plot(points_a, points_cya, marker='.', color='k')
+        ax.plot(alfa_point, Cya_max_pos, marker='.', color='k')
+
+        # 2) C учетом влияния экрана земли
+
+        #    определение переменных
+        x = x_degree * math.pi / 180
+        h_pos = hpos / bsrzak
+
+        # определение производной caya
+        lamda_scrin = float('%.3f' % ((lamdaef / 2.23) * ((math.pi * l) / (8 * hpos) + 2)))
+        caya_scrin = float(
+            '%.3f' % ((2 * math.pi * lamda_scrin * math.cos(x)) / (57.3 * (lamda_scrin + 2 * math.cos(x)))))
+
+        # макс КПС силы при посадке с учетом экрана земли с выпущенными закрылками
+        dCya_max_zak_pos_scrin = float('%.3f' % (-0.115 * math.exp(-0.5 * h_pos) * Cya_max_pos))
+
+        # макс КПС силы при посадке с учетом экрана земли
+        Cya_max_pos_scrin = float('%.3f' % (Cya_max_pos + dCya_max_zak_pos_scrin))
+
+        #   Точка
+        cya_scrin = float('%.3f' % (caya_scrin * (5 - a0_pos)))
+        k = cya_scrin / (5 - a0_pos)
+        b = -1 * k * a0_pos
+        alfa_point_scrin = float('%.3f' % ((Cya_max_pos_scrin - b) / k))
+
+        # Отображение найденных переменных
+        self.main.la_dCyamaxpos_scrin_Down.setText(str(dCya_max_zak_pos_scrin))
+        self.main.la_Cyamaxpos_scrin_Down.setText(str(Cya_max_pos_scrin))
+        self.main.la_Caya_scrin_Down.setText(str(caya_scrin))
+        self.main.la_lamda_scrin_Down.setText(str(lamda_scrin))
+        self.main.la_Cya_scrin_Down.setText(str(cya_scrin))
+
+        # Отрисовка
+        points_cya[1]=cya_scrin
+        ax.plot(points_a, points_cya, '--', marker='.', color='r')
+        ax.plot(alfa_point_scrin, Cya_max_pos_scrin, marker='.', color='r')
 
 
+    # Выбор чисел Маха от типа двигателя
+    def func_type(self, type):
+        if type == 'ТРД':
+            list_M = [float('%.3f' % Mrasch), 0, 0.7, 0.8, 0.85, 0.9, 0.95]
+            return list_M
+        elif type == 'ТВД и ПД':
+            list_M = [float('%.3f' % Mrasch), 0, 0.4, 0.5, 0.6, 0.7]
+            return list_M
 
+    # ПОСТРОЕНИЕ КРЕЙСЕРСКИХ КРИВЫХ
+    def MakeCruise(self):
+        self.main.tabWidget.setCurrentIndex(4)
 
+        list_M = self.func_type(type)
+        list_caya_szh = []
+        list_cya = []
+        for M in list_M:
+            caya_szh = caya / math.sqrt(1 - M ** 2)
+            list_caya_szh.append(float('%.3f' % caya_szh))
 
+            cya = caya_szh * (5 - a0)
+            list_cya.append(float('%.3f' % cya))
 
+        #     Построение
+        self.fCruise.clear()
+        ax = self.fCruise.add_subplot(111)
+        for cya in list_cya:
+            point_alfa = [a0, 5]
+            point_cya = [0, cya]
+            ax.plot(point_alfa, point_cya, color='k')
+            ax.text(5.01, cya, 'M = ' + str(list_M[list_cya.index(cya)]), rotation=0, fontsize=7)
+
+        ax.vlines(5, 0, list_cya[-1], color='k', linewidth=1, linestyle='--')
+        ax.set_title('Крейсерские кривые Суа = f(a)', loc='right', pad=5, fontsize=11)
+
+        # Занесение координат в БД
+        arr = []
+        arr_ = [0, 1, 2]
+        for i in range(len(list_M)):
+            arr_[0] = list_M[i]
+            arr_[1] = list_caya_szh[i]
+            arr_[2] = list_cya[i]
+            arr.append(tuple(arr_))
+        cor = tuple(arr)
+        self.cursor.execute('DELETE FROM "Крейсерская кривая";', )
+        sqlite_insert_query = """INSERT INTO 'Крейсерская кривая'
+                                                (M, Caya_szh, Cya) VALUES (?, ?, ?);"""
+        self.cursor.executemany(sqlite_insert_query, cor)
+        self.connection.commit()
+
+        # Отображение в таблице
+        SQLquery = 'SELECT * FROM "Крейсерская кривая"'
+
+        tablecol = 1
+        self.main.tableWidget_Cruise.setRowCount(3)
+        self.main.tableWidget_Cruise.setColumnCount(len(list_M) + 1)
+        for row in self.cursor.execute(SQLquery):
+            for col in range(3):
+                item = QtWidgets.QTableWidgetItem(str(row[col]))
+                tablerow = col
+                item.setTextAlignment(QtCore.Qt.AlignCenter)
+                item.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
+                self.main.tableWidget_Cruise.setItem(tablerow, tablecol, item)
+            tablecol = tablecol + 1
+
+        item1 = QtWidgets.QTableWidgetItem('М')
+        item2 = QtWidgets.QTableWidgetItem('Суа сж')
+        item3 = QtWidgets.QTableWidgetItem('Суа')
+        self.main.tableWidget_Cruise.setItem(0, 0, item1)
+        self.main.tableWidget_Cruise.setItem(1, 0, item2)
+        self.main.tableWidget_Cruise.setItem(2, 0, item3)
 
 
 if __name__ == '__main__':  # Если мы запускаем файл напрямую, а не импортируем
