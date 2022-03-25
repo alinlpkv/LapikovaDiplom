@@ -17,7 +17,7 @@ import numpy as np
 from scipy import interpolate
 from UI_Choose import Ui_Form
 from UI_dialog import Ui_Dialog
-
+from prettytable import PrettyTable
 # GLOBAL
 # Wing
 
@@ -166,6 +166,8 @@ linear_size = []
 c_lamda_el_for_cxa = []
 Sk_el_for_cxa = []
 n_el_for_cxa = []
+a_list_help=[]
+cya_list_help=[]
 
 
 # ДИАЛОГОВОЕ ОКНО С РАСЧЕТНЫМИ СХЕМАМИ
@@ -293,6 +295,14 @@ class ExampleApp(QtWidgets.QMainWindow):
         Vlayout_Cruise.addWidget(self.cCruise)
         self.main.cruiswidget.setLayout(Vlayout_Cruise)
 
+        # График для вспомогательной поляры
+        self.fP_Help = plt.figure()
+        self.cP_Help = FigureCanvas(self.fP_Help)
+        Vlayout_P_Help = QVBoxLayout()
+        Vlayout_P_Help.addWidget(NavigationToolbar(self.cP_Help, self))
+        Vlayout_P_Help.addWidget(self.cP_Help)
+        self.main.helpwidget_2.setLayout(Vlayout_P_Help)
+
     def set(self):
         # Первая вкладка
         self.main.tabWidget_2.setTabVisible(0, False)
@@ -302,6 +312,7 @@ class ExampleApp(QtWidgets.QMainWindow):
         self.main.tabWidget_2.setTabVisible(4, False)
         self.main.tabWidget_2.setTabVisible(5, False)
         self.main.tabWidget_2.setTabVisible(6, False)
+
 
         self.main.buStart.clicked.connect(self.ButtonEnabled)
         self.main.buWing.clicked.connect(self.pressedWing)
@@ -313,6 +324,8 @@ class ExampleApp(QtWidgets.QMainWindow):
         self.main.buCommonData.clicked.connect(self.pressedCommonData)
         self.main.buShowAirPlan.clicked.connect(self.OpenPlan)
         self.main.buFlapChoose.clicked.connect(self.OpenFlapChoose)
+        self.main.buCre.clicked.connect(self.pressedPolyr)
+
 
         # вторая вкладка
         self.main.tabWidget.setTabVisible(0, False)
@@ -321,12 +334,21 @@ class ExampleApp(QtWidgets.QMainWindow):
         self.main.tabWidget.setTabVisible(3, False)
         self.main.tabWidget.setTabVisible(4, False)
 
+        # третья вкладка
+        self.main.tabPolyr.setTabVisible(0,False)
+        self.main.tabPolyr.setTabVisible(1,False)
+        self.main.tabPolyr.setTabVisible(2,False)
+        self.main.tabPolyr.setTabVisible(3,False)
+
         # Построение вспомогательных кривых
         self.main.buMkr.clicked.connect(self.MakeMkr)
         self.main.buHelp.clicked.connect(self.MakeHelp)
         self.main.buUp.clicked.connect(self.MakeUp)
         self.main.buDown.clicked.connect(self.MakeDown)
         self.main.buCre.clicked.connect(self.MakeCruise)
+
+        # Построение поляр
+        self.main.buHelpPolyr.clicked.connect(self.MakeHelpPolyr)
 
         # Расчет переменных
         self.main.buCalWing.clicked.connect(self.CalculateWing)
@@ -836,8 +858,8 @@ class ExampleApp(QtWidgets.QMainWindow):
         # print('2cf = '+str(v))
         # nc_wing = self.find_nc_wing(0.5, 0.16)
         # print('nc_wing = ' + str(nc_wing))
-        nc_br = self.find_nc_body_rotate(8)
-        print('nc_br = ' + str(nc_br))
+        # nc_br = self.find_nc_body_rotate(8)
+        # print('nc_br = ' + str(nc_br))
         # print('delta = ' + str(self.call_delta(2.2, 13)))
 
         self.iconbutton(self.main.buWing, self.button)
@@ -872,6 +894,9 @@ class ExampleApp(QtWidgets.QMainWindow):
     def pressedCommonData(self):
         self.main.tabWidget_2.setCurrentIndex(6)
         self.iconbutton(self.main.buCommonData, self.button)
+
+    def pressedPolyr(self):
+        self.main.tabData.setTabEnabled(2, True)
 
     def OpenPlan(self):
         dlg = DialogPlan(self)
@@ -1332,9 +1357,9 @@ class ExampleApp(QtWidgets.QMainWindow):
 
         # ЗАПОЛНЕНИЕ МАССИВОВ ДАННЫМИ
         global linear_size, c_lamda_el_for_cxa, Sk_el_for_cxa, n_el_for_cxa
-        linear_size = [b, bgo, bvo, bp, lf, lgd, lgsh]
-        c_lamda_el_for_cxa = [c_, cgo_, cvo_, cp_, lamdaf, lamdagd, lamdagsh]
-        Sk_el_for_cxa = [S, Sgo, Svo, Sp, Ssm * 0.5, Ssm_gd * 0.5, Ssm_gsh * 0.5]
+        linear_size = [b, bgo, bvo, bp, lf, lgd, lgsh, 0]
+        c_lamda_el_for_cxa = [c_, cgo_, cvo_, cp_, lamdaf, lamdagd, lamdagsh, 0]
+        Sk_el_for_cxa = [S, Sgo, Svo, Sp, Ssm * 0.5, Ssm_gd * 0.5, Ssm_gsh * 0.5, 0]
         n_el_for_cxa = [1, ngo, nvo, npylon, 1, ngd, ngsh, nlight]
 
         # Расчет координат вспомогательной прямой
@@ -1425,6 +1450,10 @@ class ExampleApp(QtWidgets.QMainWindow):
         # ax.grid()
         self.canvas.draw()
 
+        # po = plt.gca()
+        # line = po.lines
+        # print(line.get_xydata())
+
     # ПОСТРОЕНИЕ ВСПОМОГАТЕЛЬНОЙ КРИВОЙ cya = f(a)
     def MakeHelp(self):
         self.main.buUp.setVisible(True)
@@ -1462,18 +1491,26 @@ class ExampleApp(QtWidgets.QMainWindow):
         px5 = px4 + deltaalfa
         py5 = Cyamax
 
-        # Отображение найденных переменных
-        # self.main.la_1_help.setText('(' + str(a0) + '; ' + str(0) + ')')
-        # self.main.la_2_help.setText('(' + str(alfa_px2) + '; ' + str(cya_py2) + ')')
-        # self.main.la_3_help.setText('(' + str(px3) + '; ' + str(cya_py3) + ')')
-        # self.main.la_4_help.setText('(' + str(px4) + '; ' + str(Cyamax) + ')')
-        # self.main.la_5_help.setText('(' + str(px5) + '; ' + str(Cyamax) + ')')
-
         self.main.la_1_help.setText(str(a0) + '; ' + str(0))
         self.main.la_2_help.setText(str(alfa_px2) + '; ' + str(cya_py2))
         self.main.la_3_help.setText(str(px3) + '; ' + str(cya_py3))
         self.main.la_4_help.setText(str(px4) + '; ' + str(Cyamax))
         self.main.la_5_help.setText(str(px5) + '; ' + str(Cyamax))
+
+        # заполнение списков для последующего использования во вспомогательной поляре
+        global a_list_help, cya_list_help
+        a_list_help.clear()
+        cya_list_help.clear()
+        a_list_help.append(a0)
+        cya_list_help.append(0)
+        a = 1  # !!!!!
+        while px5 - a > 3:
+            a_list_help.append(a)
+            cya_list_help.append(float('%.3f' % (k*a+b)))
+            a += 3
+        a_list_help.append(px5)
+        cya_list_help.append(Cyamax)
+
 
         self.main.la_Re_help.setText(str(Re))
         self.main.la_Vmin_help.setText(str(float('%.3f' % Vmin)))
@@ -1516,9 +1553,9 @@ class ExampleApp(QtWidgets.QMainWindow):
 
         ax.set_title('Вспомогательная кривая Cya = f(a)', loc='right', pad=5, fontsize=11)
         ax.legend(loc='lower right')
-        # arc = matplotlib.patches.Arc((px5, cya_py3), deltaalfa*2, (Cyamax-cya_py3)*2, 180, 270)
 
-        # ax.add_patch(arc)
+        # заполнение массива углов атаки
+
         self.chelp.draw()
 
     # ПОСТРОЕНИЕ ВЗЛЕТНОЙ КРИВОЙ (С УЧЕТОМ И БЕЗ УЧЕТА ВЛИЯНИЯ ЭКРАНА ЗЕМЛИ)
@@ -1548,10 +1585,18 @@ class ExampleApp(QtWidgets.QMainWindow):
             xshzak * math.pi / 180)))
 
         # УРАВНЕНИЯ ПРИ НАЛИЧИИ ВИНТОВ
+        if Dv != 0:
+            W = Vmin/2 + math.sqrt(math.pow(Vmin/2, 2) + (4*Gvzl)/(math.pi*n*p_zero*10*Dv*Dv))
+            dCya_obd = -caya*(-1.5+a0)*math.pow(W/Vmin, 2)*Sobd_
+            da0_obd = (1.5+a0)*math.pow(W/Vmin, 2)*Sobd_
+        else:
+            dCya_obd = 0
+            da0_obd = 0
+
 
         # Максимальный коэф подъемной силы при взлете
-        Cyamax_vzl = float('%.3f' % (Cyamax + dCyamax_pr + dCyamax_zak_vzl))  # +dCya_obd
-        a0_vzl = float('%.3f' % (a0 + da0_vzl * 180 / math.pi))  # +da0_obd
+        Cyamax_vzl = float('%.3f' % (Cyamax + dCyamax_pr + dCyamax_zak_vzl+dCya_obd)) #+dCya_obd
+        a0_vzl = float('%.3f' % (a0 + (da0_vzl+da0_obd) * 180 / math.pi))  # +da0_obd
 
         # Точка
         cya = float('%.3f' % (caya * (5 - a0_vzl)))
@@ -1562,12 +1607,12 @@ class ExampleApp(QtWidgets.QMainWindow):
         # Отображение найденных переменных
         self.main.la_dCyamaxpr_Up.setText(str(dCyamax_pr))
         self.main.la_dCyamaxzakvzl_Up.setText(str(dCyamax_zak_vzl))
-        self.main.la_dCyaobd_Up.setText(str(0))  # найти переменную с винтами
+        self.main.la_dCyaobd_Up.setText(str(dCya_obd ))  # найти переменную с винтами
         self.main.la_Cyamax_Up.setText(str(Cyamax))
         self.main.la_Cyamaxvzl_Up.setText(str(Cyamax_vzl))
         self.main.la_dCyamax_Up.setText(str(dCyamax))
         self.main.la_da0vzl_Up.setText(str(da0_vzl))
-        self.main.la_da0obd_Up.setText(str(0))  # найти переменную с винтами
+        self.main.la_da0obd_Up.setText(str(da0_obd))  # найти переменную с винтами
         self.main.la_a0_Up.setText(str(a0))
         self.main.la_a0vzl_Up.setText(str(a0_vzl))
         self.main.la_Cya_Up.setText(str(cya))
@@ -1842,19 +1887,22 @@ class ExampleApp(QtWidgets.QMainWindow):
         self.main.tableWidget_Cruise.setItem(1, 0, item2)
         self.main.tableWidget_Cruise.setItem(2, 0, item3)
 
+        self.main.tabData.setTabEnabled(2, True)
         self.MakeHelpPolyr()
 
     def MakeHelpPolyr(self):
-        print()
+        self.main.tabPolyr.setCurrentIndex(0)
         print('ВСПОМОГАТЕЛЬНАЯ ПОЛЯРА')
 
         # РАСЧЕТ КОЭФФИЦИЕНТА ПРОФИЛЬНОГО СОПРОТИВЛЕНИЯ
         Vmin_pol = float('%.3f' % (math.sqrt((2 * Gpol * g) / (p_zero * S * Cyamax))))
         print('Vmin_pol = ' + str(Vmin_pol))
+        M = Vmin_pol/340.294 # ЧЕ ЗА КОНСТАНТА ???????????
+        delta = self.call_delta(lamdaef, n)
+
         print('Кинт = ' + str(Kint))
         print('cxk = ' + str(cxk_light))
 
-        # M = Vmin_pol /
         Re_el_for_cxa = []
         xtau_el_for_cxa = []
         cf_el_for_cxa = []
@@ -1866,38 +1914,31 @@ class ExampleApp(QtWidgets.QMainWindow):
 
         for el in linear_size:
             index = linear_size.index(el)
-
             # число Рейнольдса
             Re_el = float('%.3f' % ((float(Vmin_pol) * float(el)) / (v_zero * math.pow(10, 6))))  # степень 10^6
             Re_el_for_cxa.append(Re_el)
-
             # точка перехода
             if index == 0:
                 xtau_el_for_cxa.append(xtau_)
                 nint_el_for_cxa.append(float('%.3f' % (1 - Kint * Sf_)))  # nинт для крыла
             else:
                 xtau_el_for_cxa.append(0)
-
             if el != 0:
                 # коэф сопротивления плоской пластине
                 cf_el_for_cxa.append(self.find_2cf(xtau_el_for_cxa[index], Re_el))
-
                 # коэф nМ
                 nm_el_for_cxa.append(1)
-
                 # коэф nc
                 if index < 4:
                     nc_el_for_cxa.append(self.find_nc_wing(xtau_el_for_cxa[index], c_lamda_el_for_cxa[index]))
                 else:
                     nc_el_for_cxa.append(self.find_nc_body_rotate(c_lamda_el_for_cxa[index]))
-
                 # коэф nинт
                 if index != 0:
                     nint_el_for_cxa.append(1)
-
                 # коэф cxk
                 cxk = cf_el_for_cxa[index] * nc_el_for_cxa[index] * nm_el_for_cxa[index] * nint_el_for_cxa[index]
-                cxk_el_for_cxa.append(float('%.5f' % (cxk)))
+                cxk_el_for_cxa.append(float('%.5f' % cxk))
 
             else:
                 cf_el_for_cxa.append(0)
@@ -1913,45 +1954,73 @@ class ExampleApp(QtWidgets.QMainWindow):
 
         cxo = float('%.5f' % (sum(chislitel_el_for_cxa) * 1.04 / S))
 
-        # # Занесение координат в БД
-        # arr = []
-        # arr_ = [float(i) for i in np.arange(0, 10)]
-        # for i in range(len(arr_)):
-        #     arr_[0] = linear_size[i]
-        #     arr_[1] = Re_el_for_cxa[i]
-        #     arr_[2] = xtau_el_for_cxa[i]
-        #     arr_[3] = cf_el_for_cxa[i]
-        #     arr_[4] = c_lamda_el_for_cxa[i]
-        #     arr_[5] = nc_el_for_cxa[i]
-        #     arr_[6] = nm_el_for_cxa[i]
-        #     arr_[7] = nint_el_for_cxa[i]
-        #     arr_[8] = cxk_el_for_cxa[i]
-        #     arr_[9] = Sk_el_for_cxa[i]
-        #     arr_[10] = n_el_for_cxa[i]
-        #     arr_[11] = chislitel_el_for_cxa[i]
-        #     arr.append(tuple(arr_))
-        # cor = tuple(arr)
-        # # self.cursor.execute('DELETE FROM "Расчет коэффициента профильного сопротивления";', )
-        # sqlite_insert_query = """INSERT INTO 'Расчет коэффициента профильного сопротивления' ('Крыло',
-        # 'Горизонтальное оперение', 'Вертикальное оперение', Пилон, Фюзеляж, 'Гондола двигателя',
-        # 'Гондола шасси', 'Фонарь, кабины пилотов' ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?); """
-        self.cursor.executemany(sqlite_insert_query, cor)
-        self.connection.commit()
-        print(str('λ '))
-        print(linear_size)
-        print(Re_el_for_cxa)
-        print(xtau_el_for_cxa)
-        print(cf_el_for_cxa)
-        print(c_lamda_el_for_cxa)
-        print(nc_el_for_cxa)
-        print(nm_el_for_cxa)
-        print(nint_el_for_cxa)
-        print(cxk_el_for_cxa)
-        print(Sk_el_for_cxa)
-        print(n_el_for_cxa)
-        print(chislitel_el_for_cxa)
+        th = ['Крыло', 'Горизонтальное оперение', 'Вертикальное оперение', 'Пилон', 'Фюзеляж',
+              'Гондола двигателя', 'Гондола шасси', 'Фонарь, кабины пилотов']
+        td = ['Линейный размер', 'Re', 'xt', '2cf', 'c_, lamda', 'nc',
+              'nM', 'nинт', 'cxk', 'Sk', 'n', 'n*cxk*ck*Sk']
 
+        table = PrettyTable(th)
+
+        table.add_row(linear_size)
+        table.add_row(Re_el_for_cxa)
+        table.add_row(xtau_el_for_cxa)
+        table.add_row(cf_el_for_cxa)
+        table.add_row(c_lamda_el_for_cxa)
+        table.add_row(nc_el_for_cxa)
+        table.add_row(nm_el_for_cxa)
+        table.add_row(nint_el_for_cxa)
+        table.add_row(cxk_el_for_cxa)
+        table.add_row(Sk_el_for_cxa)
+        table.add_row(n_el_for_cxa)
+        table.add_row(chislitel_el_for_cxa)
+        table.add_column('Расчетная величина', td)
+
+        print(table)  # Печатаем таблицу
         print('cxo = ' + str(cxo))
+
+        # Приращение коэффициента профильного сопротивления
+        cya__list = []
+        dCxp_list = []
+        # Коэффициент вихревого индуктивного сопротивления самолета
+        Cxi_list = []
+        # Коэффициент лобового сопротивления
+        Cxa_list=[]
+
+        for el in cya_list_help:
+            #
+            cya_ = el/Cyamax
+            cya__list.append(float('%.4f' % (cya_)))
+            #
+            exp_dCxp = math.pow(cya_, 4)*(1-math.exp(-0.1*math.pow((cya_ - 0.4), 2)))
+            dCxp_list.append(float('%.4f' % exp_dCxp))
+            #
+            exp_Cxi = ((el*el)/(math.pi*lamdaef))*((1+delta)/math.sqrt(1-M*M))
+            Cxi_list.append(float('%.4f' % exp_Cxi))
+            #
+            Cxa_list.append(float('%.4f' % (cxo+exp_dCxp+exp_Cxi)))
+
+# КОЛИЧЕТСВО ДВИГАТЕЛЕЙ ЭТО НУМЕР !!!!!!!!!
+
+        table_coordinats = PrettyTable(a_list_help)
+        table_coordinats.add_row(cya_list_help)
+        table_coordinats.add_row(cya__list)
+        table_coordinats.add_row(dCxp_list)
+        table_coordinats.add_row(Cxi_list)
+        table_coordinats.add_row(Cxa_list)
+
+        print(table_coordinats)
+
+        # Отрисовка
+        self.fP_Help.clear()  # отчистка графика
+        ax = self.fP_Help.add_subplot(111)
+        tck, u = interpolate.splprep([Cxa_list, cya_list_help], k=2)
+        xnew, ynew = interpolate.splev(np.linspace(0, 1, 100), tck, der=0)
+        ax.plot(Cxa_list, cya_list_help, ' ', xnew, ynew, color='tab:blue')
+
+
+
+
+
 
 
 if __name__ == '__main__':  # Если мы запускаем файл напрямую, а не импортируем
