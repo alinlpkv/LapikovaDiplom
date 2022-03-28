@@ -844,10 +844,41 @@ class ExampleApp(QtWidgets.QMainWindow):
                         i += 1
         return float(delta)
 
-
     def request_delta(self, lamda, n):
         Sql_request = 'SELECT Дельта FROM Поправка ' \
                       'WHERE "Удлинение"= %s AND "Сужение"= %s' % (lamda, n)
+        self.cursor.execute(Sql_request)
+        return self.cursor.fetchone()[0]
+
+    # ОПРЕДЕЛЕНИЕ КОЭФФИЦИЕНТА ПРИРАЩЕНИЯ ОТ ВЫПУЩЕННЫХ ЗАКРЫЛКОВ
+    def find_dCxo_zak(self, bzak, delta):
+        list_delta = [float(i) for i in np.arange(0, 0.9, 0.1)]
+        print(list_delta)
+
+        if (bzak == 0.3 or bzak == 0.1) and delta in list_delta:
+            return self.request_dcxo(bzak, delta)
+
+        elif bzak == 0.3 or bzak == 0.1:
+            flag = False
+            i = 0
+            while not flag:
+                if list_delta[i] < delta < list_delta[i + 1]:
+                    y1 = self.request_dcxo(bzak, list_delta[i])
+                    y2 = self.request_dcxo(bzak, list_delta[i + 1])
+                    return self.cal_system(list_delta[i], y1, list_delta[i + 1], y2, delta)
+                else:
+                    i += 1
+        else:
+            first = self.find_dCxo_zak(0.1, delta)
+            second = self.find_dCxo_zak(0.3, delta)
+            part = (second - first) / 20
+            dcxo_zak = (bzak - 0.1) * part * 100 + first
+            return float('%.4f' % dcxo_zak)
+
+
+    def request_dcxo(self, b, d):
+        Sql_request = 'SELECT dcxo_zak FROM dCxo_zak ' \
+                      'WHERE b_zak= %s AND delta= %s' % (b, d)
         self.cursor.execute(Sql_request)
         return self.cursor.fetchone()[0]
 
@@ -861,6 +892,7 @@ class ExampleApp(QtWidgets.QMainWindow):
         # nc_br = self.find_nc_body_rotate(8)
         # print('nc_br = ' + str(nc_br))
         # print('delta = ' + str(self.call_delta(2.2, 13)))
+        print('dCxo_zak = ' + str(self.find_dCxo_zak(0.3, 0.55)))
 
         self.iconbutton(self.main.buWing, self.button)
 
@@ -1432,7 +1464,7 @@ class ExampleApp(QtWidgets.QMainWindow):
         self.figure.clear()
         ax = self.figure.add_subplot(111)
         # plot data
-        ax.set_title('Кривая зависимости Мкр = f(cya)', loc='right', pad=5, fontsize=11)
+        #ax.set_title('Кривая зависимости Мкр = f(cya)', loc='right', pad=5, fontsize=11)
 
         tck, u = interpolate.splprep([arr_cya, arr_Mkr], s=0)
         xnew, ynew = interpolate.splev(np.linspace(0, 1, 100), tck, der=0)
@@ -1444,10 +1476,12 @@ class ExampleApp(QtWidgets.QMainWindow):
 
         ax.legend(['Координаты', 'Мкр = f(cya)', ], loc='lower left')
 
-        # ax.set_xlabel('Суа')
-        # ax.set_ylabel('Мкр')
-        # ax.vlines(cya_rasch, arr_Mkr[7], Mrasch, color='lightgray',linewidth=1,linestyle='--')
-        # ax.grid()
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
+        ax.set_ylabel('$\it{Cya}$', loc='top', rotation=0)
+        ax.set_xlabel('$\it{Mкр}$', loc='right', fontsize=11)
+
+        self.figure.tight_layout()
         self.canvas.draw()
 
         # po = plt.gca()
@@ -1520,10 +1554,10 @@ class ExampleApp(QtWidgets.QMainWindow):
         # Отрисовка
         arrX_ = [a0, alfa_px2, px3, px4]
         arrY_ = [0, cya_py2, cya_py3, Cyamax]
-        ax.plot(arrX_, arrY_, '--', label='Cya=f(a)_', color='k')
+        ax.plot(arrX_, arrY_, '--', color='k')
         arrX = [a0, alfa_px2, px3]
         arrY = [0, cya_py2, cya_py3]
-        ax.plot(arrX, arrY, label='Cya=f(a)', color='k')
+        ax.plot(arrX, arrY, color='k')
 
         px = (px3 + px4) / 2
         py = (cya_py3 + Cyamax) / 2
@@ -1551,10 +1585,15 @@ class ExampleApp(QtWidgets.QMainWindow):
         # y_smooth = f(x_new)
         # ax.plot(x_new, y_smooth)
 
-        ax.set_title('Вспомогательная кривая Cya = f(a)', loc='right', pad=5, fontsize=11)
+       # ax.set_title('Вспомогательная кривая Cya = f(a)', loc='left', pad=5, fontsize=11)
         ax.legend(loc='lower right')
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
+        ax.set_ylabel('$\it{Cya}$', loc = 'top', rotation=0)
+        ax.set_xlabel('$\it{α, °}$', loc = 'right', fontsize=11)
+        #ax.vlines(cya_rasch, arr_Mkr[7], Mrasch, color='lightgray',linewidth=1,linestyle='-')
+        self.fhelp.tight_layout()
 
-        # заполнение массива углов атаки
 
         self.chelp.draw()
 
@@ -1694,7 +1733,14 @@ class ExampleApp(QtWidgets.QMainWindow):
         ax.plot(points_a_s, points_Cya_s, marker=' ', color='tab:blue')
         ax.plot(px2_s, Cyamax_vzl_scrin, marker='.', color='k')
 
-        ax.set_title('Взлетные кривые Cya = f(a)', loc='right', pad=5, fontsize=11)
+        #ax.set_title('Взлетные кривые Cya = f(a)', loc='right', pad=5, fontsize=11)
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
+        ax.set_ylabel('$\it{Cya}$', loc='top', rotation=0)
+        ax.set_xlabel('$\it{α, °}$', loc='right', fontsize=11)
+        self.fUp.tight_layout()
+        self.cUp.draw()
+
 
     # ПОСТРОЕНИЕ ПОСАДОЧНЫХ КРИВЫХ (С УЧЕТОМ И БЕЗ УЧЕТА ВЛИЯНИЯ ЭКРАНА ЗЕМЛИ)
     def MakeDown(self):
@@ -1760,7 +1806,12 @@ class ExampleApp(QtWidgets.QMainWindow):
         ax.plot(points_a, points_Cya, marker=' ', color='k')
         ax.plot(px2, Cya_max_pos, marker='.', color='purple')
 
-        ax.set_title('Посадочные кривые Cya = f(a)', loc='right', pad=5, fontsize=11)
+        #ax.set_title('Посадочные кривые Cya = f(a)', loc='right', pad=5, fontsize=11)
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
+        ax.set_ylabel('$\it{Cya}$', loc='top', rotation=0)
+        ax.set_xlabel('$\it{α, °}$', loc='right', fontsize=11)
+        self.fDown.tight_layout()
 
         # 2) C учетом влияния экрана земли
 
@@ -1813,6 +1864,7 @@ class ExampleApp(QtWidgets.QMainWindow):
 
         ax.plot(points_a_s, points_Cya_s, marker=' ', color='tab:blue')
         ax.plot(px2_s, Cya_max_pos_scrin, marker='.', color='k')
+        self.cDown.draw()
 
     # Выбор чисел Маха от типа двигателя
     def func_type(self, type):
@@ -1838,18 +1890,23 @@ class ExampleApp(QtWidgets.QMainWindow):
             cya = caya_szh * (5 - a0)
             list_cya.append(float('%.3f' % cya))
 
-        #     Построение
+        #  Построение
         self.fCruise.clear()
         ax = self.fCruise.add_subplot(111)
         for cya in list_cya:
             point_alfa = [a0, 5]
             point_cya = [0, cya]
             ax.plot(point_alfa, point_cya, color='k', linewidth=1)
-            ax.text(5.01, cya, 'M = ' + str(list_M[list_cya.index(cya)]), rotation=0, fontsize=7)
+            ax.annotate('M = '+ str(list_M[list_cya.index(cya)]), xy=(5, cya), xytext = (5,5),  textcoords='offset points')
+
 
         ax.vlines(5, 0, list_cya[-1], color='k', linewidth=1, linestyle='--')
-        ax.set_title('Крейсерские кривые Суа = f(a)', loc='right', pad=5, fontsize=11)
-
+        #ax.set_title('Крейсерские кривые Суа = f(a)', loc='left', pad=5, fontsize=11)
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
+        ax.set_ylabel('$\it{Cya}$', loc='top', rotation=0)
+        ax.set_xlabel('$\it{α, °}$', loc='right', fontsize=11)
+        self.fCruise.tight_layout()
         # Занесение координат в БД
         arr = []
         arr_ = [0, 1, 2]
@@ -1888,7 +1945,9 @@ class ExampleApp(QtWidgets.QMainWindow):
         self.main.tableWidget_Cruise.setItem(2, 0, item3)
 
         self.main.tabData.setTabEnabled(2, True)
-        self.MakeHelpPolyr()
+        #self.MakeHelpPolyr()
+        self.cCruise.draw()
+
 
     def MakeHelpPolyr(self):
         self.main.tabPolyr.setCurrentIndex(0)
@@ -1896,7 +1955,7 @@ class ExampleApp(QtWidgets.QMainWindow):
 
         # РАСЧЕТ КОЭФФИЦИЕНТА ПРОФИЛЬНОГО СОПРОТИВЛЕНИЯ
         Vmin_pol = float('%.3f' % (math.sqrt((2 * Gpol * g) / (p_zero * S * Cyamax))))
-        print('Vmin_pol = ' + str(Vmin_pol))
+        # print('Vmin_pol = ' + str(Vmin_pol))
         M = Vmin_pol/340.294 # ЧЕ ЗА КОНСТАНТА ???????????
         delta = self.call_delta(lamdaef, n)
 
@@ -1939,10 +1998,9 @@ class ExampleApp(QtWidgets.QMainWindow):
                 # коэф cxk
                 cxk = cf_el_for_cxa[index] * nc_el_for_cxa[index] * nm_el_for_cxa[index] * nint_el_for_cxa[index]
                 cxk_el_for_cxa.append(float('%.5f' % cxk))
-
             else:
-                cf_el_for_cxa.append(0)
                 nc_el_for_cxa.append(0)
+                cf_el_for_cxa.append(0)
                 nm_el_for_cxa.append(0)
                 nint_el_for_cxa.append(0)
                 cxk_el_for_cxa.append(0)
@@ -2010,17 +2068,34 @@ class ExampleApp(QtWidgets.QMainWindow):
 
         print(table_coordinats)
 
+        self.main.la_Vminpol.setText(str(Vmin_pol))
+        self.main.la_M_Vmin.setText(str(float('%.3f' % M)))
+
         # Отрисовка
         self.fP_Help.clear()  # отчистка графика
-        ax = self.fP_Help.add_subplot(111)
+        ax = self.fP_Help.add_subplot()
         tck, u = interpolate.splprep([Cxa_list, cya_list_help], k=2)
         xnew, ynew = interpolate.splev(np.linspace(0, 1, 100), tck, der=0)
-        ax.plot(Cxa_list, cya_list_help, ' ', xnew, ynew, color='tab:blue')
+        ax.plot(Cxa_list, cya_list_help, '.', xnew, ynew, color='tab:blue')
+
+        index=0
+        for i, j in zip(Cxa_list, cya_list_help):
+            ax.annotate(str(a_list_help[index]), xy=(i, j))
+            index +=1
+
+        # point_x = [min(Cxa_list),min(Cxa_list)]
+        # point_y = [0, max(cya_list_help)/2]
+        # ax.plot(point_x, point_y, color='green')
 
 
 
-
-
+       # ax.set_title('Вспомогательная поляра', loc='left', pad=5, fontsize=11)
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
+        ax.set_ylabel('$\it{Cya}$', loc='top', rotation=0)
+        ax.set_xlabel('$\it{Cxa}$', loc='right', fontsize=11)
+        self.fP_Help.tight_layout()
+        self.cP_Help.draw()
 
 
 if __name__ == '__main__':  # Если мы запускаем файл напрямую, а не импортируем
