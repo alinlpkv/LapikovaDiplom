@@ -69,6 +69,7 @@ hpos = 0
 Sobpr = 0
 Sobpr_ = 0
 Flap_type = ''
+dCxomax = 0
 
 # Tail
 bgo = 0
@@ -157,6 +158,9 @@ da0_vzl = 0
 Re = 0
 Vmin = 0
 
+# взлетная кривая
+
+
 # для интерфейса
 permision_for_curve = [False, False, False]
 
@@ -168,6 +172,16 @@ Sk_el_for_cxa = []
 n_el_for_cxa = []
 a_list_help=[]
 cya_list_help=[]
+cxo=0
+
+# взлетная поляра
+a_list_up=[]
+cya_list_up=[]
+Cyamax_vzl =0
+a_list_up_scrin=[]
+cya_list_up_scrin=[]
+Cyamax_vzl_scrin=0
+lamdaef_scrin=0
 
 
 # ДИАЛОГОВОЕ ОКНО С РАСЧЕТНЫМИ СХЕМАМИ
@@ -223,7 +237,7 @@ class DialogMechanism(QtWidgets.QWidget):
             Flap_type = 'Предкрылок'
         else:
             msg_ = QMessageBox()
-            msg_.setIcon(QMessageBox.Warning)
+            msg_.setIcon(QMessageBox.Critical)
             msg_.setText("Выберите тип механизации.")
             msg_.setWindowTitle("Предупреждение")
             msg_.exec_()
@@ -362,6 +376,7 @@ class ExampleApp(QtWidgets.QMainWindow):
     def ButtonEnabled(self):
         self.main.groupBox_13.setVisible(True)
         self.pressedWing()
+
 
     # ОПРЕДЕЛЕНИЕ ПЕРЕМЕННОЙ Кх ПО ГРАФИКУ
     def find_Kx(self, n, x_degree):
@@ -852,12 +867,10 @@ class ExampleApp(QtWidgets.QMainWindow):
 
     # ОПРЕДЕЛЕНИЕ КОЭФФИЦИЕНТА ПРИРАЩЕНИЯ ОТ ВЫПУЩЕННЫХ ЗАКРЫЛКОВ
     def find_dCxo_zak(self, bzak, delta):
-        list_delta = [float(i) for i in np.arange(0, 0.9, 0.1)]
-        print(list_delta)
+        list_delta = [float('%.1f' % i) for i in np.arange(0, 0.9, 0.1)]
 
         if (bzak == 0.3 or bzak == 0.1) and delta in list_delta:
             return self.request_dcxo(bzak, delta)
-
         elif bzak == 0.3 or bzak == 0.1:
             flag = False
             i = 0
@@ -875,7 +888,6 @@ class ExampleApp(QtWidgets.QMainWindow):
             dcxo_zak = (bzak - 0.1) * part * 100 + first
             return float('%.4f' % dcxo_zak)
 
-
     def request_dcxo(self, b, d):
         Sql_request = 'SELECT dcxo_zak FROM dCxo_zak ' \
                       'WHERE b_zak= %s AND delta= %s' % (b, d)
@@ -892,7 +904,7 @@ class ExampleApp(QtWidgets.QMainWindow):
         # nc_br = self.find_nc_body_rotate(8)
         # print('nc_br = ' + str(nc_br))
         # print('delta = ' + str(self.call_delta(2.2, 13)))
-        print('dCxo_zak = ' + str(self.find_dCxo_zak(0.3, 0.55)))
+       # print('dCxo_zak = ' + str(self.find_dCxo_zak(0.2, 0.68)))
 
         self.iconbutton(self.main.buWing, self.button)
 
@@ -1597,6 +1609,16 @@ class ExampleApp(QtWidgets.QMainWindow):
 
         self.chelp.draw()
 
+    # ПОИСК КОЭФФИЦИЕНТА ОТ ТИПА ЗАКРЫЛОК
+    def find_zak(self, Flap_type):
+        global dCyamax, dCxomax
+        Sql_request = 'SELECT * FROM Закрылки WHERE Тип_механизации = %s' % '"' + Flap_type + '"'
+        self.cursor.execute(Sql_request)
+        cur = self.cursor.fetchone()
+        dCyamax = float(cur[2])
+        dCxomax = float(cur[3])
+
+
     # ПОСТРОЕНИЕ ВЗЛЕТНОЙ КРИВОЙ (С УЧЕТОМ И БЕЗ УЧЕТА ВЛИЯНИЯ ЭКРАНА ЗЕМЛИ)
     def MakeUp(self):
         self.main.tabWidget.setCurrentIndex(2)
@@ -1605,11 +1627,8 @@ class ExampleApp(QtWidgets.QMainWindow):
 
         # 1) Без учета влияния экрана земли
 
-        # Определение переменных по графикам и таблицам (dCyamax и da0_vzl)
-        global da0_vzl, dCyamax
-        Sql_request = 'SELECT deltaCyamax FROM Закрылки WHERE Тип_механизации = %s' % '"' + Flap_type + '"'
-        self.cursor.execute(Sql_request)
-        dCyamax = float(self.cursor.fetchone()[0])  # ВЗЯТЬ ВСЕ СТОЛБЦЫ С БД
+        # Определение переменных по графикам da0_vzl
+        self.find_zak(Flap_type)
         da0_vzl = self.call_da0(deltavzl)  # определение приращения угла атаки нулевой подъемной силы в радианах
 
         # Преращение коэф подъем силы от выпуска предкрылков
@@ -1634,6 +1653,7 @@ class ExampleApp(QtWidgets.QMainWindow):
 
 
         # Максимальный коэф подъемной силы при взлете
+        global Cyamax_vzl
         Cyamax_vzl = float('%.3f' % (Cyamax + dCyamax_pr + dCyamax_zak_vzl+dCya_obd)) #+dCya_obd
         a0_vzl = float('%.3f' % (a0 + (da0_vzl+da0_obd) * 180 / math.pi))  # +da0_obd
 
@@ -1682,12 +1702,26 @@ class ExampleApp(QtWidgets.QMainWindow):
         ax.plot(points_a, points_Cya, marker=' ', color='k')
         ax.plot(px2, Cyamax_vzl, marker='.', color='purple')
 
-        # 2) С учетом влияния экрана земли
+        # заполнение списков для взлетной кривой
+        global a_list_up, cya_list_up
+        a_list_up.clear()
+        cya_list_up.clear()
+        a_list_up.append(a0_vzl)
+        cya_list_up.append(0)
+        a = 1  # !!!!!
+        while px2 - a > 3:
+            a_list_up.append(a)
+            cya_list_up.append(float('%.3f' % (k * a + b)))
+            a += 3
+        a_list_up.append(px2)
+        cya_list_up.append(Cyamax_vzl)
 
+        # 2) С учетом влияния экрана земли
         # Приращение КПС, вызванный экранным влиянияем земли
         dCyamax_zak_vzl_scrin = float('%.3f' % (-1 * 0.115 * math.exp(-0.5 * h / bsrzak) * Cyamax_vzl))
 
         # КПС, вызванный экранным влиянияем земли
+        global Cyamax_vzl_scrin, lamdaef_scrin
         Cyamax_vzl_scrin = float('%.3f' % (Cyamax_vzl + dCyamax_zak_vzl_scrin))
 
         # Фиктивное удлинение крыла, учитывающее влияние экрана земли
@@ -1741,6 +1775,19 @@ class ExampleApp(QtWidgets.QMainWindow):
         self.fUp.tight_layout()
         self.cUp.draw()
 
+        # заполнение списков для взлетной кривой
+        global a_list_up_scrin, cya_list_up_scrin
+        a_list_up_scrin.clear()
+        cya_list_up_scrin.clear()
+        a_list_up_scrin.append(a0_vzl)
+        cya_list_up_scrin.append(0)
+        a = 1  # !!!!!
+        while px2_s - a > 3:
+            a_list_up_scrin.append(a)
+            cya_list_up_scrin.append(float('%.3f' % (k * a + b)))
+            a += 3
+        a_list_up_scrin.append(px2_s)
+        cya_list_up_scrin.append(Cyamax_vzl_scrin)
 
     # ПОСТРОЕНИЕ ПОСАДОЧНЫХ КРИВЫХ (С УЧЕТОМ И БЕЗ УЧЕТА ВЛИЯНИЯ ЭКРАНА ЗЕМЛИ)
     def MakeDown(self):
@@ -1948,7 +1995,7 @@ class ExampleApp(QtWidgets.QMainWindow):
         #self.MakeHelpPolyr()
         self.cCruise.draw()
 
-
+    # ВСПОМОГАТЕЛЬНАЯ ПОЛЯРА
     def MakeHelpPolyr(self):
         self.main.tabPolyr.setCurrentIndex(0)
         print('ВСПОМОГАТЕЛЬНАЯ ПОЛЯРА')
@@ -2010,6 +2057,7 @@ class ExampleApp(QtWidgets.QMainWindow):
             chislitel = n_el_for_cxa[i] * cxk_el_for_cxa[i] * el
             chislitel_el_for_cxa.append(float('%.5f' % chislitel))
 
+        global cxo
         cxo = float('%.5f' % (sum(chislitel_el_for_cxa) * 1.04 / S))
 
         th = ['Крыло', 'Горизонтальное оперение', 'Вертикальное оперение', 'Пилон', 'Фюзеляж',
@@ -2096,6 +2144,86 @@ class ExampleApp(QtWidgets.QMainWindow):
         ax.set_xlabel('$\it{Cxa}$', loc='right', fontsize=11)
         self.fP_Help.tight_layout()
         self.cP_Help.draw()
+
+        self.MakeUpPolyr()
+
+    # ВЗЛЕТНАЯ ПОЛЯРА
+    def MakeUpPolyr(self):
+        # print(dCxomax)
+        # print(self.find_dCxo_zak(bzak_, deltavzl))
+        # print(deltavzl)
+        print()
+        print("ВЗЛЕТНАЯ ПОЛЯРА ")
+
+        # 1) без учета влияния экрана земли
+        delta = self.call_delta(lamdaef, n)
+        cya__list_up = []
+        dCxp_list_up = []
+        Cxi_list_up = []
+        Cxa_list_up = []
+
+
+        cxo_vzl =  cxo + 0.5*cxo + 10 * self.find_dCxo_zak(bzak_, deltavzl) * Sobzak_ * dCxomax
+        print('cxo_vzl = '+ str(float('%.3f' % cxo_vzl)))
+        Vvzl = math.sqrt((2*Gvzl*g)/(0.8 * p_zero * S * Cyamax_vzl)) #!!!!! почему с экраном ?
+        print('V_vzl = '+ str(float('%.3f' % Vvzl)))
+        Mvzl = Vvzl/340.294 # CONST
+        print('Mvzl = '+ str(float('%.3f' % Mvzl)))
+
+        for el in cya_list_up:
+            #
+            cya_ = el /Cyamax_vzl # какой суа макс нужен ??
+            cya__list_up.append(float('%.4f' % (cya_)))
+            #
+            exp_dCxp = math.pow(cya_, 4) * (1 - math.exp(-0.1 * math.pow((cya_ - 0.4), 2)))
+            dCxp_list_up.append(float('%.4f' % exp_dCxp))
+            #
+            exp_Cxi = ((el * el) / (math.pi * lamdaef)) * ((1 + delta) / math.sqrt(1 - Mvzl * Mvzl))
+            Cxi_list_up.append(float('%.4f' % exp_Cxi))
+            #
+            Cxa_list_up.append(float('%.4f' % (cxo_vzl + exp_dCxp + exp_Cxi)))
+
+        table_coordinats = PrettyTable(a_list_up)
+        table_coordinats.add_row(cya_list_up)
+        table_coordinats.add_row(cya__list_up)
+        table_coordinats.add_row(dCxp_list_up)
+        table_coordinats.add_row(Cxi_list_up)
+        table_coordinats.add_row(Cxa_list_up)
+        print(table_coordinats)
+
+        # 1) c учетом влияния экрана земли
+        delta = self.call_delta(lamdaef_scrin, n)
+        cya__list_up_scrin = []
+        dCxp_list_up_scrin = []
+        Cxi_list_up_scrin = []
+        Cxa_list_up_scrin = []
+
+        Vvzl_scrin = math.sqrt((2 * Gvzl * g) / (0.8 * p_zero * S * Cyamax_vzl_scrin))  # !!!!! почему с экраном ?
+        print('V_vzl_scrin = ' + str(float('%.3f' % Vvzl_scrin)))
+        Mvzl = Vvzl_scrin / 340.294  # CONST
+        print('Mvzl_scrin = ' + str(float('%.3f' % Mvzl_scrin)))
+
+        for el in cya_list_up_scrin:
+            #
+            cya_ = el / Cyamax_vzl_scrin  # какой суа макс нужен ??
+            cya__list_up_scrin.append(float('%.4f' % (cya_)))
+            #
+            exp_dCxp = math.pow(cya_, 4) * (1 - math.exp(-0.1 * math.pow((cya_ - 0.4), 2)))
+            dCxp_list_up_scrin.append(float('%.4f' % exp_dCxp))
+            #
+            exp_Cxi = ((el * el) / (math.pi * lamdaef_scrin)) * ((1 + delta) / math.sqrt(1 - Mvzl_scrin * Mvzl_scrin))
+            Cxi_list_up_scrin.append(float('%.4f' % exp_Cxi))
+            #
+            Cxa_list_up_scrin.append(float('%.4f' % (cxo_vzl + exp_dCxp + exp_Cxi)))
+
+        table_coordinats_scrin = PrettyTable(a_list_up_scrin)
+        table_coordinats_scrin.add_row(cya_list_up_scrin)
+        table_coordinats_scrin.add_row(cya__list_up_scrin)
+        table_coordinats_scrin.add_row(dCxp_list_up_scrin)
+        table_coordinats_scrin.add_row(Cxi_list_up_scrin)
+        table_coordinats_scrin.add_row(Cxa_list_up_scrin)
+        print(table_coordinats_scrin)
+
 
 
 if __name__ == '__main__':  # Если мы запускаем файл напрямую, а не импортируем
