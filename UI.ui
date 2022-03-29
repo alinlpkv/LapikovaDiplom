@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1432</width>
+    <width>1438</width>
     <height>816</height>
    </rect>
   </property>
@@ -47,7 +47,8 @@ QPushButton {
 QLabel {
 	font-size:14px;
 	margin-bottom:4px;
-}
+	font-family: 'MS Shell Dlg 2', Helvetica, Georgia, Times, serif;
+} 
 
 QRadioButton {
 font-size:14px; }
@@ -94,7 +95,7 @@ font-size:14px; }
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>1414</width>
+         <width>1420</width>
          <height>778</height>
         </rect>
        </property>
@@ -3324,8 +3325,8 @@ font-size: 14px;
              <widget class="QLabel" name="label_316">
               <property name="geometry">
                <rect>
-                <x>190</x>
-                <y>220</y>
+                <x>200</x>
+                <y>240</y>
                 <width>551</width>
                 <height>91</height>
                </rect>
@@ -3337,8 +3338,8 @@ font-size: 14px;
              <widget class="QLabel" name="label_317">
               <property name="geometry">
                <rect>
-                <x>240</x>
-                <y>300</y>
+                <x>250</x>
+                <y>310</y>
                 <width>451</width>
                 <height>31</height>
                </rect>
@@ -3626,6 +3627,15 @@ QPushButton::hover{
                  <property name="enabled">
                   <bool>true</bool>
                  </property>
+                 <property name="font">
+                  <font>
+                   <pointsize>-1</pointsize>
+                   <weight>50</weight>
+                   <bold>false</bold>
+                   <underline>false</underline>
+                   <strikeout>false</strikeout>
+                  </font>
+                 </property>
                  <property name="cursor">
                   <cursorShape>PointingHandCursor</cursorShape>
                  </property>
@@ -3701,7 +3711,7 @@ border:0;}
 </string>
             </property>
             <property name="currentIndex">
-             <number>0</number>
+             <number>3</number>
             </property>
             <widget class="QWidget" name="tabMkr">
              <attribute name="title">
@@ -3711,10 +3721,16 @@ border:0;}
               <property name="geometry">
                <rect>
                 <x>10</x>
-                <y>360</y>
-                <width>891</width>
-                <height>91</height>
+                <y>70</y>
+                <width>921</width>
+                <height>121</height>
                </rect>
+              </property>
+              <property name="styleSheet">
+               <string notr="true">border: 0;</string>
+              </property>
+              <property name="sizeAdjustPolicy">
+               <enum>QAbstractScrollArea::AdjustToContents</enum>
               </property>
              </widget>
              <widget class="QLabel" name="label_Mkr2">
@@ -3736,41 +3752,47 @@ border:0;}
                 <x>10</x>
                 <y>10</y>
                 <width>931</width>
-                <height>71</height>
+                <height>61</height>
                </rect>
               </property>
+              <property name="font">
+               <font>
+                <family>MS Shell Dlg 2,Helvetica,Georgia,Times,serif</family>
+                <pointsize>-1</pointsize>
+               </font>
+              </property>
               <property name="text">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Times New Roman,serif'; font-size:14pt;&quot;&gt;Наличие кривой зависимости &lt;/span&gt;&lt;span style=&quot; font-family:'Times New Roman,serif'; font-size:14pt; font-style:italic;&quot;&gt;М&lt;/span&gt;&lt;span style=&quot; font-family:'Times New Roman,serif'; font-size:14pt; font-style:italic; vertical-align:sub;&quot;&gt;кр &lt;/span&gt;&lt;span style=&quot; font-family:'Times New Roman,serif'; font-size:14pt; font-style:italic;&quot;&gt;= f(c&lt;/span&gt;&lt;span style=&quot; font-family:'Times New Roman,serif'; font-size:14pt; font-style:italic; vertical-align:sub;&quot;&gt;ya&lt;/span&gt;&lt;span style=&quot; font-family:'Times New Roman,serif'; font-size:14pt; font-style:italic;&quot;&gt;)&lt;/span&gt;&lt;span style=&quot; font-family:'Times New Roman,serif'; font-size:14pt;&quot;&gt; позволяет определить степень влияния сжимаемости воздуха &lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Times New Roman,serif'; font-size:14pt;&quot;&gt;на аэродинамические характеристики самолета при полете на разных скоростях и углах атаки. &lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Наличие кривой зависимости &lt;span style=&quot; font-style:italic; color:#00aaff;&quot;&gt;М&lt;/span&gt;&lt;span style=&quot; font-style:italic; color:#00aaff; vertical-align:sub;&quot;&gt;кр &lt;/span&gt;&lt;span style=&quot; font-style:italic; color:#00aaff;&quot;&gt;= f(c&lt;/span&gt;&lt;span style=&quot; font-style:italic; color:#00aaff; vertical-align:sub;&quot;&gt;ya&lt;/span&gt;&lt;span style=&quot; font-style:italic; color:#00aaff;&quot;&gt;)&lt;/span&gt; позволяет определить степень влияния сжимаемости воздуха &lt;/p&gt;&lt;p&gt;на аэродинамические характеристики самолета при полете на разных скоростях и углах атаки. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
              </widget>
              <widget class="QLabel" name="label_283">
               <property name="geometry">
                <rect>
-                <x>640</x>
-                <y>80</y>
+                <x>680</x>
+                <y>210</y>
                 <width>491</width>
                 <height>141</height>
                </rect>
               </property>
               <property name="text">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Times New Roman,serif'; font-size:14pt;&quot;&gt;Точка &lt;/span&gt;&lt;span style=&quot; font-family:'Times New Roman,serif'; font-size:14pt; font-style:italic;&quot;&gt;А&lt;/span&gt;&lt;span style=&quot; font-family:'Times New Roman,serif'; font-size:14pt;&quot;&gt; располагается выше кривой - полет трансзвуковой:&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Times New Roman,serif'; font-size:14pt;&quot;&gt;имеются местные сверхзвуковые зоны и местные скачки &lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Times New Roman,serif'; font-size:14pt;&quot;&gt;уплотнения на поверхности крыла. &lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Times New Roman,serif'; font-size:14pt;&quot;&gt;Волновые потери следует учитывать. &lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot;&quot;&gt;Точка &lt;/span&gt;&lt;span style=&quot;  font-style:italic;&quot;&gt;А&lt;/span&gt;&lt;span style=&quot; &quot;&gt; располагается выше кривой - полет трансзвуковой:&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot;&quot;&gt;имеются местные сверхзвуковые зоны и местные скачки &lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; &quot;&gt;уплотнения на поверхности крыла. &lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot;&quot;&gt;Волновые потери следует учитывать. &lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
              </widget>
              <widget class="QWidget" name="plotWidget" native="true">
               <property name="geometry">
                <rect>
                 <x>10</x>
-                <y>80</y>
-                <width>619</width>
-                <height>269</height>
+                <y>210</y>
+                <width>660</width>
+                <height>340</height>
                </rect>
               </property>
              </widget>
              <widget class="QGroupBox" name="groupBox_15">
               <property name="geometry">
                <rect>
-                <x>640</x>
-                <y>220</y>
+                <x>680</x>
+                <y>350</y>
                 <width>167</width>
                 <height>97</height>
                </rect>
@@ -3857,8 +3879,8 @@ font-size: 14px;
                <rect>
                 <x>10</x>
                 <y>70</y>
-                <width>541</width>
-                <height>271</height>
+                <width>660</width>
+                <height>400</height>
                </rect>
               </property>
              </widget>
@@ -3872,27 +3894,27 @@ font-size: 14px;
                </rect>
               </property>
               <property name="text">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Для построения вспомогательной кривой&lt;span style=&quot; font-style:italic;&quot;&gt; c&lt;/span&gt;&lt;span style=&quot; font-style:italic; vertical-align:sub;&quot;&gt;ya&lt;/span&gt;&lt;span style=&quot; font-style:italic;&quot;&gt;=f(α) &lt;/span&gt;(шасси и средства механизации крыла убраны, полет происходит &lt;/p&gt;&lt;p&gt;на нулевой высоте Н=0, влияние экрана земли отсутствует, скорость полета минимальная) достаточно иметь пять точек.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Для построения &lt;span style=&quot; font-style:italic; color:#00aaff;&quot;&gt;вспомогательной кривой&lt;/span&gt;&lt;span style=&quot; font-style:italic;&quot;&gt; c&lt;/span&gt;&lt;span style=&quot; font-style:italic; vertical-align:sub;&quot;&gt;ya&lt;/span&gt;&lt;span style=&quot; font-style:italic;&quot;&gt;=f(α) &lt;/span&gt;(шасси и средства механизации крыла убраны, полет происходит &lt;/p&gt;&lt;p&gt;на нулевой высоте Н=0, влияние экрана земли отсутствует, скорость полета минимальная) достаточно иметь пять точек.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
              </widget>
              <widget class="QLabel" name="label_293">
               <property name="geometry">
                <rect>
-                <x>10</x>
-                <y>350</y>
-                <width>711</width>
+                <x>670</x>
+                <y>90</y>
+                <width>421</width>
                 <height>111</height>
                </rect>
               </property>
               <property name="text">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Точки 1 - 4 образуют линейный участок кривой, который характеризует&lt;/p&gt;&lt;p&gt;безотрывное обтекание крыла. Точка 3 соответствует началу развития&lt;/p&gt;&lt;p&gt;срывных явлений на крыле, вызывающих появление низкочастотной&lt;/p&gt;&lt;p&gt;тряски самолета. Точка 5 соответствует значению критического угла атаки.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Точки 1 - 4 образуют линейный участок кривой, который &lt;/p&gt;&lt;p&gt;характеризует безотрывное обтекание крыла. Точка 3 &lt;/p&gt;&lt;p&gt;соответствует началу развития срывных явлений на крыле,&lt;/p&gt;&lt;p&gt;вызывающих появление низкочастотной тряски самолета. &lt;/p&gt;&lt;p&gt;Точка 5 соответствует значению критического угла атаки.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
              </widget>
              <widget class="QLabel" name="label_Mkr_2">
               <property name="geometry">
                <rect>
-                <x>570</x>
-                <y>70</y>
+                <x>670</x>
+                <y>200</y>
                 <width>151</width>
                 <height>31</height>
                </rect>
@@ -3904,10 +3926,10 @@ font-size: 14px;
              <widget class="QLabel" name="label_315">
               <property name="geometry">
                <rect>
-                <x>800</x>
-                <y>70</y>
+                <x>890</x>
+                <y>200</y>
                 <width>161</width>
-                <height>21</height>
+                <height>31</height>
                </rect>
               </property>
               <property name="text">
@@ -3917,8 +3939,8 @@ font-size: 14px;
              <widget class="QGroupBox" name="groupBox_18">
               <property name="geometry">
                <rect>
-                <x>570</x>
-                <y>100</y>
+                <x>670</x>
+                <y>230</y>
                 <width>191</width>
                 <height>151</height>
                </rect>
@@ -4021,8 +4043,8 @@ font-size: 14px;
              <widget class="QGroupBox" name="groupBox_20">
               <property name="geometry">
                <rect>
-                <x>800</x>
-                <y>100</y>
+                <x>890</x>
+                <y>230</y>
                 <width>180</width>
                 <height>124</height>
                </rect>
@@ -4113,18 +4135,18 @@ font-size: 14px;
              <widget class="QWidget" name="upwidget" native="true">
               <property name="geometry">
                <rect>
-                <x>20</x>
-                <y>50</y>
-                <width>571</width>
-                <height>321</height>
+                <x>10</x>
+                <y>40</y>
+                <width>660</width>
+                <height>340</height>
                </rect>
               </property>
              </widget>
              <widget class="QGroupBox" name="groupBox_16">
               <property name="geometry">
                <rect>
-                <x>600</x>
-                <y>50</y>
+                <x>690</x>
+                <y>40</y>
                 <width>343</width>
                 <height>261</height>
                </rect>
@@ -4423,21 +4445,21 @@ font-size: 14px;
              <widget class="QLabel" name="label_Mkr_6">
               <property name="geometry">
                <rect>
-                <x>20</x>
-                <y>5</y>
+                <x>10</x>
+                <y>10</y>
                 <width>821</width>
                 <height>31</height>
                </rect>
               </property>
               <property name="text">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Расчет и построение взлетной кривой&lt;span style=&quot; font-style:italic;&quot;&gt; c&lt;/span&gt;&lt;span style=&quot; font-style:italic; vertical-align:sub;&quot;&gt;ya&lt;/span&gt;&lt;span style=&quot; font-style:italic;&quot;&gt;=f(α) &lt;/span&gt;(шасси и средства механизации крыла выпущены).&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Расчет и построение &lt;span style=&quot; color:#00aaff;&quot;&gt;взлетной кривой&lt;/span&gt;&lt;span style=&quot; font-style:italic; color:#00aaff;&quot;&gt; c&lt;/span&gt;&lt;span style=&quot; font-style:italic; color:#00aaff; vertical-align:sub;&quot;&gt;ya&lt;/span&gt;&lt;span style=&quot; font-style:italic; color:#00aaff;&quot;&gt;=f(α) &lt;/span&gt;(шасси и средства механизации крыла выпущены).&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
              </widget>
              <widget class="QLabel" name="label_284">
               <property name="geometry">
                <rect>
                 <x>20</x>
-                <y>380</y>
+                <y>390</y>
                 <width>271</width>
                 <height>21</height>
                </rect>
@@ -4450,7 +4472,7 @@ font-size: 14px;
               <property name="geometry">
                <rect>
                 <x>20</x>
-                <y>410</y>
+                <y>420</y>
                 <width>271</width>
                 <height>21</height>
                </rect>
@@ -4463,7 +4485,7 @@ font-size: 14px;
               <property name="geometry">
                <rect>
                 <x>300</x>
-                <y>380</y>
+                <y>390</y>
                 <width>51</width>
                 <height>21</height>
                </rect>
@@ -4476,7 +4498,7 @@ font-size: 14px;
               <property name="geometry">
                <rect>
                 <x>290</x>
-                <y>410</y>
+                <y>420</y>
                 <width>51</width>
                 <height>21</height>
                </rect>
@@ -4496,18 +4518,18 @@ font-size: 14px;
              <widget class="QWidget" name="downwidget" native="true">
               <property name="geometry">
                <rect>
-                <x>20</x>
+                <x>10</x>
                 <y>40</y>
-                <width>621</width>
-                <height>341</height>
+                <width>660</width>
+                <height>340</height>
                </rect>
               </property>
              </widget>
              <widget class="QGroupBox" name="groupBox_17">
               <property name="geometry">
                <rect>
-                <x>650</x>
-                <y>50</y>
+                <x>690</x>
+                <y>40</y>
                 <width>343</width>
                 <height>234</height>
                </rect>
@@ -4762,21 +4784,21 @@ font-size: 14px;
              <widget class="QLabel" name="label_Mkr_7">
               <property name="geometry">
                <rect>
-                <x>20</x>
+                <x>10</x>
                 <y>10</y>
                 <width>821</width>
                 <height>21</height>
                </rect>
               </property>
               <property name="text">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Расчет и построение посадочной кривой&lt;span style=&quot; font-style:italic;&quot;&gt; c&lt;/span&gt;&lt;span style=&quot; font-style:italic; vertical-align:sub;&quot;&gt;ya&lt;/span&gt;&lt;span style=&quot; font-style:italic;&quot;&gt;=f(α) &lt;/span&gt;(шасси и средства механизации крыла выпущены).&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Расчет и построение &lt;span style=&quot; font-style:italic; color:#00aaff;&quot;&gt;посадочной кривой c&lt;/span&gt;&lt;span style=&quot; font-style:italic; color:#00aaff; vertical-align:sub;&quot;&gt;ya&lt;/span&gt;&lt;span style=&quot; font-style:italic; color:#00aaff;&quot;&gt;=f(α) &lt;/span&gt;(шасси и средства механизации крыла выпущены).&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
              </widget>
              <widget class="QLabel" name="label_355">
               <property name="geometry">
                <rect>
                 <x>300</x>
-                <y>400</y>
+                <y>390</y>
                 <width>51</width>
                 <height>21</height>
                </rect>
@@ -4789,7 +4811,7 @@ font-size: 14px;
               <property name="geometry">
                <rect>
                 <x>20</x>
-                <y>400</y>
+                <y>390</y>
                 <width>271</width>
                 <height>21</height>
                </rect>
@@ -4802,7 +4824,7 @@ font-size: 14px;
               <property name="geometry">
                <rect>
                 <x>290</x>
-                <y>430</y>
+                <y>420</y>
                 <width>51</width>
                 <height>21</height>
                </rect>
@@ -4818,7 +4840,7 @@ font-size: 14px;
               <property name="geometry">
                <rect>
                 <x>20</x>
-                <y>430</y>
+                <y>420</y>
                 <width>271</width>
                 <height>21</height>
                </rect>
@@ -4837,8 +4859,8 @@ font-size: 14px;
                <rect>
                 <x>10</x>
                 <y>70</y>
-                <width>621</width>
-                <height>341</height>
+                <width>660</width>
+                <height>340</height>
                </rect>
               </property>
              </widget>
@@ -4847,9 +4869,15 @@ font-size: 14px;
                <rect>
                 <x>10</x>
                 <y>420</y>
-                <width>861</width>
+                <width>871</width>
                 <height>121</height>
                </rect>
+              </property>
+              <property name="styleSheet">
+               <string notr="true">border: 0;</string>
+              </property>
+              <property name="sizeAdjustPolicy">
+               <enum>QAbstractScrollArea::AdjustToContents</enum>
               </property>
              </widget>
              <widget class="QLabel" name="label_309">
@@ -4862,16 +4890,16 @@ font-size: 14px;
                </rect>
               </property>
               <property name="text">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Расчеты крейсерских кривых проводят для полетной конфигурации &lt;/p&gt;&lt;p&gt;самолета, когда шасси и средства механизации убраны, высота полета расчетная 𝐻 = 𝐻&lt;span style=&quot; vertical-align:sub;&quot;&gt;расч&lt;/span&gt;.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Расчеты &lt;span style=&quot; font-style:italic; color:#00aaff;&quot;&gt;крейсерских кривых&lt;/span&gt; проводят для полетной конфигурации &lt;/p&gt;&lt;p&gt;самолета, когда шасси и средства механизации убраны, высота полета расчетная &lt;span style=&quot; font-style:italic;&quot;&gt;Н&lt;/span&gt; = &lt;span style=&quot; font-style:italic;&quot;&gt;Н&lt;/span&gt;&lt;span style=&quot; font-style:italic; vertical-align:sub;&quot;&gt;расч&lt;/span&gt;.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
              </widget>
              <widget class="QLabel" name="label_310">
               <property name="geometry">
                <rect>
-                <x>640</x>
-                <y>140</y>
-                <width>351</width>
-                <height>171</height>
+                <x>680</x>
+                <y>70</y>
+                <width>341</width>
+                <height>121</height>
                </rect>
               </property>
               <property name="text">
@@ -4881,8 +4909,8 @@ font-size: 14px;
              <widget class="QLabel" name="label_311">
               <property name="geometry">
                <rect>
-                <x>20</x>
-                <y>560</y>
+                <x>10</x>
+                <y>550</y>
                 <width>571</width>
                 <height>21</height>
                </rect>
@@ -5096,14 +5124,27 @@ QPushButton::hover{
            <widget class="QTabWidget" name="tabPolyr">
             <property name="geometry">
              <rect>
-              <x>220</x>
+              <x>210</x>
               <y>10</y>
               <width>1181</width>
               <height>691</height>
              </rect>
             </property>
             <property name="styleSheet">
-             <string notr="true">border:0;</string>
+             <string notr="true">QTabWidget{
+border:0;
+}
+
+QGroupBox { 
+     border: 1px solid #558de1 ; 
+     border-radius: 4px; 
+ } 
+
+QLineEdit {
+	border: 1px solid #558de1 ; 
+	border-radius: 4px; 
+	font-size: 14px;
+}</string>
             </property>
             <property name="currentIndex">
              <number>0</number>
@@ -5120,8 +5161,8 @@ QPushButton::hover{
                <rect>
                 <x>10</x>
                 <y>70</y>
-                <width>541</width>
-                <height>271</height>
+                <width>660</width>
+                <height>400</height>
                </rect>
               </property>
              </widget>
@@ -5131,24 +5172,118 @@ QPushButton::hover{
                 <x>10</x>
                 <y>10</y>
                 <width>771</width>
-                <height>51</height>
+                <height>61</height>
                </rect>
               </property>
+              <property name="font">
+               <font>
+                <family>MS Shell Dlg 2,Helvetica,Georgia,Times,serif</family>
+                <pointsize>-1</pointsize>
+               </font>
+              </property>
               <property name="text">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Вспомогательную поляру строят для полетной конфигурации самолетапри минимальной скорости полета, &lt;/p&gt;&lt;p&gt;убранных шасси и механизации крыла, высоте равной 0 и без учета влияния экрана земли. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-style:italic; color:#00aaff;&quot;&gt;Вспомогательную поляру&lt;/span&gt; строят для полетной конфигурации самолета при минимальной скорости полета, &lt;/p&gt;&lt;p&gt;убранных шасси и механизации крыла, высоте Н=0 и без учета влияния экрана земли. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
              </widget>
              <widget class="QPushButton" name="buShowHelp">
               <property name="geometry">
                <rect>
-                <x>10</x>
-                <y>350</y>
+                <x>860</x>
+                <y>250</y>
                 <width>231</width>
                 <height>51</height>
                </rect>
               </property>
               <property name="text">
                <string>Показать координаты</string>
+              </property>
+             </widget>
+             <widget class="QLabel" name="label_312">
+              <property name="geometry">
+               <rect>
+                <x>690</x>
+                <y>70</y>
+                <width>431</width>
+                <height>141</height>
+               </rect>
+              </property>
+              <property name="font">
+               <font>
+                <family>MS Shell Dlg 2,Helvetica,Georgia,Times,serif</family>
+                <pointsize>-1</pointsize>
+               </font>
+              </property>
+              <property name="text">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Поляру приближенно рассчитываюти строят исходя&lt;/p&gt;&lt;p&gt;из предположения, что подъемная сила &lt;/p&gt;&lt;p&gt;самолета в основном создается крылом, а сила сопротивления &lt;/p&gt;&lt;p&gt;самолета складывается из сопротивлений отдельных &lt;/p&gt;&lt;p&gt;элементов самолета с учетом их взаимного влияния. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+             </widget>
+             <widget class="QGroupBox" name="groupBox_24">
+              <property name="geometry">
+               <rect>
+                <x>690</x>
+                <y>250</y>
+                <width>141</width>
+                <height>71</height>
+               </rect>
+              </property>
+              <property name="title">
+               <string/>
+              </property>
+              <layout class="QGridLayout" name="gridLayout_39">
+               <item row="0" column="0">
+                <layout class="QGridLayout" name="gridLayout_40">
+                 <item row="1" column="0">
+                  <widget class="QLabel" name="label_314">
+                   <property name="toolTip">
+                    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Число Маха на высоте Н=0 при минимальной скорости полета&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                   </property>
+                   <property name="text">
+                    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;M&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="0" column="0">
+                  <widget class="QLabel" name="label_318">
+                   <property name="toolTip">
+                    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Минимальная скорость полета&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                   </property>
+                   <property name="text">
+                    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;V&lt;span style=&quot; vertical-align:sub;&quot;&gt;min&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="0" column="1">
+                  <widget class="QLineEdit" name="la_Vminpol">
+                   <property name="enabled">
+                    <bool>false</bool>
+                   </property>
+                   <property name="toolTip">
+                    <string>Минимальная скорость полета</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="1" column="1">
+                  <widget class="QLineEdit" name="la_M_Vmin">
+                   <property name="enabled">
+                    <bool>false</bool>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </item>
+              </layout>
+             </widget>
+             <widget class="QLabel" name="label_319">
+              <property name="geometry">
+               <rect>
+                <x>690</x>
+                <y>220</y>
+                <width>161</width>
+                <height>21</height>
+               </rect>
+              </property>
+              <property name="text">
+               <string>Найденные параметры:</string>
               </property>
              </widget>
             </widget>
