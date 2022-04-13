@@ -3711,7 +3711,7 @@ border:0;}
 </string>
             </property>
             <property name="currentIndex">
-             <number>3</number>
+             <number>0</number>
             </property>
             <widget class="QWidget" name="tabMkr">
              <attribute name="title">
@@ -3721,16 +3721,16 @@ border:0;}
               <property name="geometry">
                <rect>
                 <x>10</x>
-                <y>70</y>
-                <width>921</width>
-                <height>121</height>
+                <y>420</y>
+                <width>918</width>
+                <height>85</height>
                </rect>
               </property>
               <property name="styleSheet">
-               <string notr="true">border: 0;</string>
+               <string notr="true"/>
               </property>
               <property name="sizeAdjustPolicy">
-               <enum>QAbstractScrollArea::AdjustToContents</enum>
+               <enum>QAbstractScrollArea::AdjustToContentsOnFirstShow</enum>
               </property>
              </widget>
              <widget class="QLabel" name="label_Mkr2">
@@ -3768,8 +3768,8 @@ border:0;}
              <widget class="QLabel" name="label_283">
               <property name="geometry">
                <rect>
-                <x>680</x>
-                <y>210</y>
+                <x>670</x>
+                <y>70</y>
                 <width>491</width>
                 <height>141</height>
                </rect>
@@ -3782,7 +3782,7 @@ border:0;}
               <property name="geometry">
                <rect>
                 <x>10</x>
-                <y>210</y>
+                <y>70</y>
                 <width>660</width>
                 <height>340</height>
                </rect>
@@ -3791,8 +3791,8 @@ border:0;}
              <widget class="QGroupBox" name="groupBox_15">
               <property name="geometry">
                <rect>
-                <x>680</x>
-                <y>350</y>
+                <x>670</x>
+                <y>200</y>
                 <width>167</width>
                 <height>97</height>
                </rect>
@@ -4138,15 +4138,15 @@ font-size: 14px;
                 <x>10</x>
                 <y>40</y>
                 <width>660</width>
-                <height>340</height>
+                <height>400</height>
                </rect>
               </property>
              </widget>
              <widget class="QGroupBox" name="groupBox_16">
               <property name="geometry">
                <rect>
-                <x>690</x>
-                <y>40</y>
+                <x>680</x>
+                <y>120</y>
                 <width>343</width>
                 <height>261</height>
                </rect>
@@ -4458,8 +4458,8 @@ font-size: 14px;
              <widget class="QLabel" name="label_284">
               <property name="geometry">
                <rect>
-                <x>20</x>
-                <y>390</y>
+                <x>680</x>
+                <y>40</y>
                 <width>271</width>
                 <height>21</height>
                </rect>
@@ -4471,8 +4471,8 @@ font-size: 14px;
              <widget class="QLabel" name="label_286">
               <property name="geometry">
                <rect>
-                <x>20</x>
-                <y>420</y>
+                <x>680</x>
+                <y>70</y>
                 <width>271</width>
                 <height>21</height>
                </rect>
@@ -4484,8 +4484,8 @@ font-size: 14px;
              <widget class="QLabel" name="label_287">
               <property name="geometry">
                <rect>
-                <x>300</x>
-                <y>390</y>
+                <x>960</x>
+                <y>40</y>
                 <width>51</width>
                 <height>21</height>
                </rect>
@@ -4497,8 +4497,8 @@ font-size: 14px;
              <widget class="QLabel" name="label_288">
               <property name="geometry">
                <rect>
-                <x>290</x>
-                <y>420</y>
+                <x>950</x>
+                <y>70</y>
                 <width>51</width>
                 <height>21</height>
                </rect>
@@ -4508,6 +4508,19 @@ font-size: 14px;
               </property>
               <property name="text">
                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-style:italic;&quot;&gt;синяя&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+             </widget>
+             <widget class="QLabel" name="label_320">
+              <property name="geometry">
+               <rect>
+                <x>680</x>
+                <y>90</y>
+                <width>161</width>
+                <height>31</height>
+               </rect>
+              </property>
+              <property name="text">
+               <string>Найденные параметры:</string>
               </property>
              </widget>
             </widget>
@@ -4521,15 +4534,15 @@ font-size: 14px;
                 <x>10</x>
                 <y>40</y>
                 <width>660</width>
-                <height>340</height>
+                <height>400</height>
                </rect>
               </property>
              </widget>
              <widget class="QGroupBox" name="groupBox_17">
               <property name="geometry">
                <rect>
-                <x>690</x>
-                <y>40</y>
+                <x>680</x>
+                <y>120</y>
                 <width>343</width>
                 <height>234</height>
                </rect>
@@ -4797,8 +4810,8 @@ font-size: 14px;
              <widget class="QLabel" name="label_355">
               <property name="geometry">
                <rect>
-                <x>300</x>
-                <y>390</y>
+                <x>960</x>
+                <y>40</y>
                 <width>51</width>
                 <height>21</height>
                </rect>
@@ -4810,8 +4823,8 @@ font-size: 14px;
              <widget class="QLabel" name="label_356">
               <property name="geometry">
                <rect>
-                <x>20</x>
-                <y>390</y>
+                <x>680</x>
+                <y>40</y>
                 <width>271</width>
                 <height>21</height>
                </rect>
@@ -4823,8 +4836,8 @@ font-size: 14px;
              <widget class="QLabel" name="label_357">
               <property name="geometry">
                <rect>
-                <x>290</x>
-                <y>420</y>
+                <x>950</x>
+                <y>70</y>
                 <width>51</width>
                 <height>21</height>
                </rect>
@@ -4839,14 +4852,27 @@ font-size: 14px;
              <widget class="QLabel" name="label_358">
               <property name="geometry">
                <rect>
-                <x>20</x>
-                <y>420</y>
+                <x>680</x>
+                <y>70</y>
                 <width>271</width>
                 <height>21</height>
                </rect>
               </property>
               <property name="text">
                <string>Кривая с учетом влияния экрана земли -</string>
+              </property>
+             </widget>
+             <widget class="QLabel" name="label_321">
+              <property name="geometry">
+               <rect>
+                <x>680</x>
+                <y>90</y>
+                <width>161</width>
+                <height>31</height>
+               </rect>
+              </property>
+              <property name="text">
+               <string>Найденные параметры:</string>
               </property>
              </widget>
             </widget>
@@ -4869,12 +4895,12 @@ font-size: 14px;
                <rect>
                 <x>10</x>
                 <y>420</y>
-                <width>871</width>
-                <height>121</height>
+                <width>825</width>
+                <height>115</height>
                </rect>
               </property>
               <property name="styleSheet">
-               <string notr="true">border: 0;</string>
+               <string notr="true"/>
               </property>
               <property name="sizeAdjustPolicy">
                <enum>QAbstractScrollArea::AdjustToContents</enum>
@@ -4897,7 +4923,7 @@ font-size: 14px;
               <property name="geometry">
                <rect>
                 <x>680</x>
-                <y>70</y>
+                <y>110</y>
                 <width>341</width>
                 <height>121</height>
                </rect>
@@ -4909,14 +4935,14 @@ font-size: 14px;
              <widget class="QLabel" name="label_311">
               <property name="geometry">
                <rect>
-                <x>10</x>
-                <y>550</y>
+                <x>680</x>
+                <y>230</y>
                 <width>571</width>
-                <height>21</height>
+                <height>61</height>
                </rect>
               </property>
               <property name="text">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;При приближении числа Маха к 1 степень возрастания c&lt;span style=&quot; vertical-align:sub;&quot;&gt;ya&lt;/span&gt; увеличивается.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;При приближении числа Маха к 1 степень возрастания &lt;/p&gt;&lt;p&gt;c&lt;span style=&quot; vertical-align:sub;&quot;&gt;ya&lt;/span&gt; увеличивается.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
              </widget>
             </widget>
@@ -5147,7 +5173,7 @@ QLineEdit {
 }</string>
             </property>
             <property name="currentIndex">
-             <number>0</number>
+             <number>3</number>
             </property>
             <widget class="QWidget" name="tabHelp_2">
              <property name="styleSheet">
@@ -5182,7 +5208,7 @@ QLineEdit {
                </font>
               </property>
               <property name="text">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-style:italic; color:#00aaff;&quot;&gt;Вспомогательную поляру&lt;/span&gt; строят для полетной конфигурации самолета при минимальной скорости полета, &lt;/p&gt;&lt;p&gt;убранных шасси и механизации крыла, высоте Н=0 и без учета влияния экрана земли. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-style:italic; color:#00aaff;&quot;&gt;Вспомогательная поляра &lt;/span&gt;строится для полетной конфигурации самолета при минимальной скорости полета, &lt;/p&gt;&lt;p&gt;убранных шасси и механизации крыла, высоте Н=0 и без учета влияния экрана земли. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
              </widget>
              <widget class="QPushButton" name="buShowHelp">
@@ -5294,31 +5320,31 @@ QLineEdit {
              <widget class="QWidget" name="upwidget_2" native="true">
               <property name="geometry">
                <rect>
-                <x>20</x>
-                <y>50</y>
-                <width>571</width>
-                <height>321</height>
+                <x>10</x>
+                <y>70</y>
+                <width>660</width>
+                <height>400</height>
                </rect>
               </property>
              </widget>
              <widget class="QLabel" name="label_Mkr_9">
               <property name="geometry">
                <rect>
-                <x>20</x>
-                <y>5</y>
+                <x>10</x>
+                <y>10</y>
                 <width>821</width>
-                <height>31</height>
+                <height>51</height>
                </rect>
               </property>
               <property name="text">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;ТЕКСТ О ПОЛЯРАХ&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-style:italic; color:#00aaff;&quot;&gt;Взлетные поляры &lt;/span&gt;&lt;span style=&quot; color:#000000;&quot;&gt;с учетом и без учета влияния экрана земли имеют большее сопротивление&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; color:#000000;&quot;&gt;в связи с выпущенными шасси&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
              </widget>
              <widget class="QLabel" name="label_330">
               <property name="geometry">
                <rect>
-                <x>20</x>
-                <y>380</y>
+                <x>680</x>
+                <y>70</y>
                 <width>271</width>
                 <height>21</height>
                </rect>
@@ -5330,8 +5356,8 @@ QLineEdit {
              <widget class="QLabel" name="label_331">
               <property name="geometry">
                <rect>
-                <x>20</x>
-                <y>410</y>
+                <x>680</x>
+                <y>100</y>
                 <width>271</width>
                 <height>21</height>
                </rect>
@@ -5343,8 +5369,8 @@ QLineEdit {
              <widget class="QLabel" name="label_332">
               <property name="geometry">
                <rect>
-                <x>300</x>
-                <y>380</y>
+                <x>960</x>
+                <y>70</y>
                 <width>51</width>
                 <height>21</height>
                </rect>
@@ -5356,8 +5382,8 @@ QLineEdit {
              <widget class="QLabel" name="label_333">
               <property name="geometry">
                <rect>
-                <x>290</x>
-                <y>410</y>
+                <x>950</x>
+                <y>100</y>
                 <width>51</width>
                 <height>21</height>
                </rect>
@@ -5372,8 +5398,8 @@ QLineEdit {
              <widget class="QPushButton" name="buSnowUP">
               <property name="geometry">
                <rect>
-                <x>20</x>
-                <y>440</y>
+                <x>680</x>
+                <y>130</y>
                 <width>199</width>
                 <height>50</height>
                </rect>
@@ -5395,398 +5421,10 @@ QLineEdit {
                <rect>
                 <x>20</x>
                 <y>40</y>
-                <width>621</width>
-                <height>341</height>
+                <width>660</width>
+                <height>400</height>
                </rect>
               </property>
-             </widget>
-             <widget class="QGroupBox" name="groupBox_19">
-              <property name="geometry">
-               <rect>
-                <x>650</x>
-                <y>50</y>
-                <width>431</width>
-                <height>301</height>
-               </rect>
-              </property>
-              <property name="title">
-               <string>Найденные параметры</string>
-              </property>
-              <widget class="QWidget" name="gridLayoutWidget_19">
-               <property name="geometry">
-                <rect>
-                 <x>10</x>
-                 <y>30</y>
-                 <width>175</width>
-                 <height>104</height>
-                </rect>
-               </property>
-               <layout class="QGridLayout" name="gridLayout_32">
-                <item row="0" column="0">
-                 <widget class="QLabel" name="label_334">
-                  <property name="text">
-                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'-apple-system,BlinkMacSystemFont,Roboto,Helvetica Neue,Geneva,Noto Sans Armenian,Noto Sans Bengali,Noto Sans Cherokee,Noto Sans Devanagari,Noto Sans Ethiopic,Noto Sans Georgian,Noto Sans Hebrew,Noto Sans Kannada,Noto Sans Khmer,Noto Sans Lao,Noto Sans Osmanya,Noto Sans Tamil,Noto Sans Telugu,Noto Sans Thai,sans-serif,arial,Tahoma,verdana'; font-size:13px; color:#000000; background-color:#ffffff;&quot;&gt;Δ&lt;/span&gt;с&lt;span style=&quot; vertical-align:sub;&quot;&gt;ya max пос &lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="2" column="2">
-                 <widget class="QLabel" name="la_Cyamax_Down_2">
-                  <property name="text">
-                   <string/>
-                  </property>
-                 </widget>
-                </item>
-                <item row="3" column="2">
-                 <widget class="QLabel" name="la_Cyamaxpos_Down_2">
-                  <property name="text">
-                   <string/>
-                  </property>
-                 </widget>
-                </item>
-                <item row="2" column="0">
-                 <widget class="QLabel" name="label_335">
-                  <property name="toolTip">
-                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Максимальный коэффициент подъемной силы&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                  </property>
-                  <property name="text">
-                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;с&lt;span style=&quot; vertical-align:sub;&quot;&gt;ya max &lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="3" column="0">
-                 <widget class="QLabel" name="label_336">
-                  <property name="toolTip">
-                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Максимальный коэффициент подъемной силы при посадке без учета влияния экрана земли&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                  </property>
-                  <property name="text">
-                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;с&lt;span style=&quot; vertical-align:sub;&quot;&gt;уа max пос &lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="0" column="2">
-                 <widget class="QLabel" name="la_dCyamaxpr_Down_2">
-                  <property name="text">
-                   <string>0.1234</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="1" column="0">
-                 <widget class="QLabel" name="label_337">
-                  <property name="toolTip">
-                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                  </property>
-                  <property name="text">
-                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'-apple-system,BlinkMacSystemFont,Roboto,Helvetica Neue,Geneva,Noto Sans Armenian,Noto Sans Bengali,Noto Sans Cherokee,Noto Sans Devanagari,Noto Sans Ethiopic,Noto Sans Georgian,Noto Sans Hebrew,Noto Sans Kannada,Noto Sans Khmer,Noto Sans Lao,Noto Sans Osmanya,Noto Sans Tamil,Noto Sans Telugu,Noto Sans Thai,sans-serif,arial,Tahoma,verdana'; font-size:13px; color:#000000; background-color:#ffffff;&quot;&gt;Δ&lt;/span&gt;с&lt;span style=&quot; vertical-align:sub;&quot;&gt;ya max зак пос &lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="1" column="2">
-                 <widget class="QLabel" name="la_dCyamaxzakpos_Down_2">
-                  <property name="text">
-                   <string/>
-                  </property>
-                 </widget>
-                </item>
-                <item row="0" column="1">
-                 <widget class="QLabel" name="label_415">
-                  <property name="text">
-                   <string>=</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="1" column="1">
-                 <widget class="QLabel" name="label_416">
-                  <property name="text">
-                   <string>=</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="2" column="1">
-                 <widget class="QLabel" name="label_417">
-                  <property name="text">
-                   <string>=</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="3" column="1">
-                 <widget class="QLabel" name="label_418">
-                  <property name="text">
-                   <string>=</string>
-                  </property>
-                 </widget>
-                </item>
-               </layout>
-              </widget>
-              <widget class="QWidget" name="gridLayoutWidget_20">
-               <property name="geometry">
-                <rect>
-                 <x>170</x>
-                 <y>30</y>
-                 <width>142</width>
-                 <height>104</height>
-                </rect>
-               </property>
-               <layout class="QGridLayout" name="gridLayout_33">
-                <item row="3" column="2">
-                 <widget class="QLabel" name="la_a0pos_Down_2">
-                  <property name="text">
-                   <string/>
-                  </property>
-                 </widget>
-                </item>
-                <item row="3" column="0">
-                 <widget class="QLabel" name="label_338">
-                  <property name="toolTip">
-                   <string>Угол атаки нулевой подъемной силы при посадке</string>
-                  </property>
-                  <property name="text">
-                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;α&lt;span style=&quot; vertical-align:sub;&quot;&gt;0 пос &lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="0" column="0">
-                 <widget class="QLabel" name="label_339">
-                  <property name="toolTip">
-                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Зависит от типа механизации крыла&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                  </property>
-                  <property name="text">
-                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'-apple-system,BlinkMacSystemFont,Roboto,Helvetica Neue,Geneva,Noto Sans Armenian,Noto Sans Bengali,Noto Sans Cherokee,Noto Sans Devanagari,Noto Sans Ethiopic,Noto Sans Georgian,Noto Sans Hebrew,Noto Sans Kannada,Noto Sans Khmer,Noto Sans Lao,Noto Sans Osmanya,Noto Sans Tamil,Noto Sans Telugu,Noto Sans Thai,sans-serif,arial,Tahoma,verdana'; font-size:13px; color:#000000; background-color:#ffffff;&quot;&gt;Δ&lt;/span&gt;с&lt;span style=&quot; vertical-align:sub;&quot;&gt;уа max &lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="0" column="2">
-                 <widget class="QLabel" name="la_dCyamax_Down_2">
-                  <property name="text">
-                   <string>0.1234</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="2" column="2">
-                 <widget class="QLabel" name="la_a0_Down_2">
-                  <property name="text">
-                   <string/>
-                  </property>
-                 </widget>
-                </item>
-                <item row="1" column="0">
-                 <widget class="QLabel" name="label_340">
-                  <property name="toolTip">
-                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Приращения угла атаки нулевой подъемной силы при взлете&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                  </property>
-                  <property name="text">
-                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'-apple-system,BlinkMacSystemFont,Roboto,Helvetica Neue,Geneva,Noto Sans Armenian,Noto Sans Bengali,Noto Sans Cherokee,Noto Sans Devanagari,Noto Sans Ethiopic,Noto Sans Georgian,Noto Sans Hebrew,Noto Sans Kannada,Noto Sans Khmer,Noto Sans Lao,Noto Sans Osmanya,Noto Sans Tamil,Noto Sans Telugu,Noto Sans Thai,sans-serif,arial,Tahoma,verdana'; font-size:13px; color:#000000; background-color:#ffffff;&quot;&gt;Δ&lt;/span&gt;α&lt;span style=&quot; vertical-align:sub;&quot;&gt;0 пос&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="1" column="2">
-                 <widget class="QLabel" name="la_da0pos_Down_2">
-                  <property name="text">
-                   <string/>
-                  </property>
-                 </widget>
-                </item>
-                <item row="2" column="0">
-                 <widget class="QLabel" name="label_341">
-                  <property name="toolTip">
-                   <string>Угол атаки нулевой подъемной силы</string>
-                  </property>
-                  <property name="text">
-                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;α&lt;span style=&quot; vertical-align:sub;&quot;&gt;0 &lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="0" column="1">
-                 <widget class="QLabel" name="label_419">
-                  <property name="text">
-                   <string>=</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="1" column="1">
-                 <widget class="QLabel" name="label_420">
-                  <property name="text">
-                   <string>=</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="2" column="1">
-                 <widget class="QLabel" name="label_421">
-                  <property name="text">
-                   <string>=</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="3" column="1">
-                 <widget class="QLabel" name="label_422">
-                  <property name="text">
-                   <string>=</string>
-                  </property>
-                 </widget>
-                </item>
-               </layout>
-              </widget>
-              <widget class="QWidget" name="gridLayoutWidget_21">
-               <property name="geometry">
-                <rect>
-                 <x>10</x>
-                 <y>140</y>
-                 <width>175</width>
-                 <height>111</height>
-                </rect>
-               </property>
-               <layout class="QGridLayout" name="gridLayout_34">
-                <item row="0" column="2">
-                 <widget class="QLabel" name="la_dCyamaxpos_scrin_Down_2">
-                  <property name="text">
-                   <string>0.1234</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="2" column="0">
-                 <widget class="QLabel" name="label_342">
-                  <property name="toolTip">
-                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Производная коэффициента подъемной силы с учетом влияния экрана земли при посадке&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                  </property>
-                  <property name="text">
-                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;C&lt;span style=&quot; vertical-align:super;&quot;&gt;а&lt;/span&gt;&lt;span style=&quot; vertical-align:sub;&quot;&gt;ya экр пос &lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="0" column="0">
-                 <widget class="QLabel" name="label_343">
-                  <property name="toolTip">
-                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                  </property>
-                  <property name="text">
-                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'-apple-system,BlinkMacSystemFont,Roboto,Helvetica Neue,Geneva,Noto Sans Armenian,Noto Sans Bengali,Noto Sans Cherokee,Noto Sans Devanagari,Noto Sans Ethiopic,Noto Sans Georgian,Noto Sans Hebrew,Noto Sans Kannada,Noto Sans Khmer,Noto Sans Lao,Noto Sans Osmanya,Noto Sans Tamil,Noto Sans Telugu,Noto Sans Thai,sans-serif,arial,Tahoma,verdana'; font-size:13px; color:#000000; background-color:#ffffff;&quot;&gt;Δ&lt;/span&gt;с&lt;span style=&quot; vertical-align:sub;&quot;&gt;ya max пос экр &lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="1" column="0">
-                 <widget class="QLabel" name="label_344">
-                  <property name="toolTip">
-                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Максимальный коэффициент подъемной силы при посадке с учетом экрана земли&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                  </property>
-                  <property name="text">
-                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;с&lt;span style=&quot; vertical-align:sub;&quot;&gt;ya max пос экр&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="2" column="2">
-                 <widget class="QLabel" name="la_Caya_scrin_Down_2">
-                  <property name="text">
-                   <string/>
-                  </property>
-                 </widget>
-                </item>
-                <item row="3" column="0">
-                 <widget class="QLabel" name="label_345">
-                  <property name="toolTip">
-                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Фиктивное удлинение крыла, учитывающее влияние экрана земли при посадке&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                  </property>
-                  <property name="text">
-                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;λ&lt;span style=&quot; vertical-align:sub;&quot;&gt;экр пос&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="3" column="2">
-                 <widget class="QLabel" name="la_lamda_scrin_Down_2">
-                  <property name="text">
-                   <string/>
-                  </property>
-                 </widget>
-                </item>
-                <item row="1" column="2">
-                 <widget class="QLabel" name="la_Cyamaxpos_scrin_Down_2">
-                  <property name="text">
-                   <string/>
-                  </property>
-                 </widget>
-                </item>
-                <item row="0" column="1">
-                 <widget class="QLabel" name="label_423">
-                  <property name="text">
-                   <string>=</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="1" column="1">
-                 <widget class="QLabel" name="label_424">
-                  <property name="text">
-                   <string>=</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="2" column="1">
-                 <widget class="QLabel" name="label_425">
-                  <property name="text">
-                   <string>=</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="3" column="1">
-                 <widget class="QLabel" name="label_426">
-                  <property name="text">
-                   <string>=</string>
-                  </property>
-                 </widget>
-                </item>
-               </layout>
-              </widget>
-              <widget class="QWidget" name="gridLayoutWidget_22">
-               <property name="geometry">
-                <rect>
-                 <x>170</x>
-                 <y>140</y>
-                 <width>129</width>
-                 <height>50</height>
-                </rect>
-               </property>
-               <layout class="QGridLayout" name="gridLayout_35">
-                <item row="1" column="0">
-                 <widget class="QLabel" name="label_346">
-                  <property name="text">
-                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;с&lt;span style=&quot; vertical-align:sub;&quot;&gt;уа экр &lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="1" column="2">
-                 <widget class="QLabel" name="la_Cya_scrin_Down_2">
-                  <property name="text">
-                   <string>Суа</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="0" column="0">
-                 <widget class="QLabel" name="label_347">
-                  <property name="text">
-                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;с&lt;span style=&quot; vertical-align:sub;&quot;&gt;уа &lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="0" column="2">
-                 <widget class="QLabel" name="la_Cya_Down_2">
-                  <property name="text">
-                   <string>0.1234</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="0" column="1">
-                 <widget class="QLabel" name="label_427">
-                  <property name="text">
-                   <string>=</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="1" column="1">
-                 <widget class="QLabel" name="label_428">
-                  <property name="text">
-                   <string>=</string>
-                  </property>
-                 </widget>
-                </item>
-               </layout>
-              </widget>
              </widget>
              <widget class="QLabel" name="label_Mkr_10">
               <property name="geometry">
@@ -5798,14 +5436,14 @@ QLineEdit {
                </rect>
               </property>
               <property name="text">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Расчет и построение посадочной кривой&lt;span style=&quot; font-style:italic;&quot;&gt; c&lt;/span&gt;&lt;span style=&quot; font-style:italic; vertical-align:sub;&quot;&gt;ya&lt;/span&gt;&lt;span style=&quot; font-style:italic;&quot;&gt;=f(α) &lt;/span&gt;(шасси и средства механизации крыла выпущены).&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-style:italic; color:#00aaff;&quot;&gt;Посадочная поляра, &lt;/span&gt;шасси и средства механизации крыла выпущены&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
              </widget>
              <widget class="QLabel" name="label_359">
               <property name="geometry">
                <rect>
-                <x>300</x>
-                <y>400</y>
+                <x>970</x>
+                <y>40</y>
                 <width>51</width>
                 <height>21</height>
                </rect>
@@ -5817,8 +5455,8 @@ QLineEdit {
              <widget class="QLabel" name="label_360">
               <property name="geometry">
                <rect>
-                <x>20</x>
-                <y>400</y>
+                <x>690</x>
+                <y>40</y>
                 <width>271</width>
                 <height>21</height>
                </rect>
@@ -5830,10 +5468,10 @@ QLineEdit {
              <widget class="QLabel" name="label_361">
               <property name="geometry">
                <rect>
-                <x>290</x>
-                <y>430</y>
+                <x>960</x>
+                <y>70</y>
                 <width>51</width>
-                <height>16</height>
+                <height>21</height>
                </rect>
               </property>
               <property name="styleSheet">
@@ -5846,8 +5484,8 @@ QLineEdit {
              <widget class="QLabel" name="label_362">
               <property name="geometry">
                <rect>
-                <x>20</x>
-                <y>430</y>
+                <x>690</x>
+                <y>70</y>
                 <width>271</width>
                 <height>21</height>
                </rect>
@@ -5859,8 +5497,8 @@ QLineEdit {
              <widget class="QPushButton" name="buShowDown">
               <property name="geometry">
                <rect>
-                <x>20</x>
-                <y>460</y>
+                <x>690</x>
+                <y>100</y>
                 <width>199</width>
                 <height>50</height>
                </rect>
@@ -5882,8 +5520,8 @@ QLineEdit {
                <rect>
                 <x>10</x>
                 <y>70</y>
-                <width>621</width>
-                <height>341</height>
+                <width>660</width>
+                <height>400</height>
                </rect>
               </property>
              </widget>
@@ -5892,19 +5530,19 @@ QLineEdit {
                <rect>
                 <x>10</x>
                 <y>10</y>
-                <width>221</width>
-                <height>21</height>
+                <width>601</width>
+                <height>51</height>
                </rect>
               </property>
               <property name="text">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Крейсерская и полетная поляры&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-style:italic; color:#00aaff;&quot;&gt;Крейсерские и полетные поляры, &lt;/span&gt;шасси и средства механизации крыла выпущены&lt;/p&gt;&lt;p&gt;Полетные поляры строятся только для самолетов с турбореактивным двигателем&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
              </widget>
              <widget class="QPushButton" name="buShowCre">
               <property name="geometry">
                <rect>
-                <x>10</x>
-                <y>450</y>
+                <x>700</x>
+                <y>220</y>
                 <width>199</width>
                 <height>50</height>
                </rect>
@@ -5916,27 +5554,11 @@ QLineEdit {
                <string>Показать координаты</string>
               </property>
              </widget>
-             <widget class="QLabel" name="label_114">
-              <property name="geometry">
-               <rect>
-                <x>10</x>
-                <y>40</y>
-                <width>611</width>
-                <height>401</height>
-               </rect>
-              </property>
-              <property name="text">
-               <string/>
-              </property>
-              <property name="pixmap">
-               <pixmap>C:/Users/Dell G7/Desktop/2.png</pixmap>
-              </property>
-             </widget>
              <widget class="QLabel" name="label_167">
               <property name="geometry">
                <rect>
-                <x>640</x>
-                <y>40</y>
+                <x>700</x>
+                <y>60</y>
                 <width>171</width>
                 <height>21</height>
                </rect>
@@ -5948,8 +5570,8 @@ QLineEdit {
              <widget class="QLabel" name="label_255">
               <property name="geometry">
                <rect>
-                <x>640</x>
-                <y>70</y>
+                <x>700</x>
+                <y>90</y>
                 <width>101</width>
                 <height>16</height>
                </rect>
@@ -5961,8 +5583,8 @@ QLineEdit {
              <widget class="QLabel" name="label_268">
               <property name="geometry">
                <rect>
-                <x>640</x>
-                <y>90</y>
+                <x>700</x>
+                <y>110</y>
                 <width>101</width>
                 <height>16</height>
                </rect>
@@ -5974,8 +5596,8 @@ QLineEdit {
              <widget class="QLabel" name="label_289">
               <property name="geometry">
                <rect>
-                <x>640</x>
-                <y>110</y>
+                <x>700</x>
+                <y>130</y>
                 <width>101</width>
                 <height>16</height>
                </rect>
@@ -5987,8 +5609,8 @@ QLineEdit {
              <widget class="QLabel" name="label_290">
               <property name="geometry">
                <rect>
-                <x>640</x>
-                <y>130</y>
+                <x>700</x>
+                <y>150</y>
                 <width>101</width>
                 <height>16</height>
                </rect>
@@ -6000,8 +5622,8 @@ QLineEdit {
              <widget class="QLabel" name="label_291">
               <property name="geometry">
                <rect>
-                <x>640</x>
-                <y>170</y>
+                <x>700</x>
+                <y>190</y>
                 <width>101</width>
                 <height>16</height>
                </rect>

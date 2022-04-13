@@ -18,6 +18,7 @@ from scipy import interpolate
 from UI_Choose import Ui_Form
 from UI_dialog import Ui_Dialog
 from prettytable import PrettyTable
+
 # GLOBAL
 # Wing
 
@@ -140,6 +141,7 @@ Cyamaxprof = 0
 # ВЕЛИЧИНЫ ИЗ ТАБЛИЦ
 pH = 0  # массовая плотность
 aH = 0  # скорость звука
+vH = 0 # вязкость воздуха
 Gm = 0  # полный запас топлива
 
 dCyamax = 0  # по типу закрылка
@@ -167,12 +169,14 @@ permision_for_curve = [False, False, False]
 # для таблиц
 # вспомогательная поляра
 linear_size = []
+S_proiz=[]
 c_lamda_el_for_cxa = []
 Sk_el_for_cxa = []
 n_el_for_cxa = []
 a_list_help=[]
 cya_list_help=[]
 cxo=0
+xtau_el_for_cxa = []
 
 # взлетная поляра
 a_list_up=[]
@@ -183,6 +187,17 @@ cya_list_up_scrin=[]
 Cyamax_vzl_scrin=0
 lamdaef_scrin=0
 
+# посадочная кривая
+a_list_down=[]
+cya_list_down=[]
+Cya_max_pos =0
+a_list_down_scrin=[]
+cya_list_down_scrin=[]
+Cya_max_pos_scrin=0
+lamdaef_down_scrin=0
+
+# крейсерская
+list_Mkr=[]
 
 # ДИАЛОГОВОЕ ОКНО С РАСЧЕТНЫМИ СХЕМАМИ
 class DialogPlan(QtWidgets.QDialog):
@@ -317,6 +332,30 @@ class ExampleApp(QtWidgets.QMainWindow):
         Vlayout_P_Help.addWidget(self.cP_Help)
         self.main.helpwidget_2.setLayout(Vlayout_P_Help)
 
+        # График для взлетной поляры
+        self.fP_Up = plt.figure()
+        self.cP_Up = FigureCanvas(self.fP_Up)
+        Vlayout_P_Up = QVBoxLayout()
+        Vlayout_P_Up.addWidget(NavigationToolbar(self.cP_Up, self))
+        Vlayout_P_Up.addWidget(self.cP_Up)
+        self.main.upwidget_2.setLayout(Vlayout_P_Up)
+
+        # График для посадочной поляры
+        self.fP_Down = plt.figure()
+        self.cP_Down = FigureCanvas(self.fP_Down)
+        Vlayout_P_Down = QVBoxLayout()
+        Vlayout_P_Down.addWidget(NavigationToolbar(self.cP_Down, self))
+        Vlayout_P_Down.addWidget(self.cP_Down)
+        self.main.downwidget_2.setLayout(Vlayout_P_Down)
+
+        # График для крейсерских и полетных поляр
+        self.fP_Cre = plt.figure()
+        self.cP_Cre = FigureCanvas(self.fP_Cre)
+        Vlayout_P_Cre = QVBoxLayout()
+        Vlayout_P_Cre.addWidget(NavigationToolbar(self.cP_Cre, self))
+        Vlayout_P_Cre.addWidget(self.cP_Cre)
+        self.main.cruiswidget_2.setLayout(Vlayout_P_Cre)
+
     def set(self):
         # Первая вкладка
         self.main.tabWidget_2.setTabVisible(0, False)
@@ -363,6 +402,9 @@ class ExampleApp(QtWidgets.QMainWindow):
 
         # Построение поляр
         self.main.buHelpPolyr.clicked.connect(self.MakeHelpPolyr)
+        self.main.buUpPolyr.clicked.connect(self.MakeUpPolyr)
+        self.main.buDownPolyr.clicked.connect(self.MakeDownPolyr)
+        self.main.buCrePolyr.clicked.connect(self.MakeCruisePolyr)
 
         # Расчет переменных
         self.main.buCalWing.clicked.connect(self.CalculateWing)
@@ -420,27 +462,30 @@ class ExampleApp(QtWidgets.QMainWindow):
                     else:
                         i = i + 1
 
-    # ОПРЕДЕЛЕНИЕ рН, аН ПО ТАБЛИЦЕ
+    # ОПРЕДЕЛЕНИЕ рН, аН, vH ПО ТАБЛИЦЕ
     def find_with_H(self, H):
-        global pH, aH
+        global pH, aH, vH
         pH = 0
         aH = 0
+        vH = 0
         h = float('%.1f' % (H / 1000))
 
         Sql_request = 'SELECT * FROM "Стандартная_атмосфера" ' \
                       'WHERE "Высота(км)" = %s' % str(h)
         self.cursor.execute(Sql_request)
-
         cor = self.cursor.fetchone()
         # print(cor)
         pHstr = cor[3]
         aHstr = cor[6]
+        vHstr = cor[5]
 
         pH = float(pHstr)
         aH = float(aHstr)
+        vH = float(vHstr)
 
         print('pH = ' + str(pH))
         print('aH = ' + str(aH))
+        print('vH = ' + str(vH))
 
     # ОПРЕДЕЛЕНИЕ Gm ПО ТАБЛИЦЕ
     def whatWeight(self, Gvzl):
@@ -830,7 +875,6 @@ class ExampleApp(QtWidgets.QMainWindow):
             part = (second - first) / 30
             delta = (lamda % 7) * part * 10 + first
 
-
         return float('%.4f' % delta)
 
     def find_delta(self, lamda, n):
@@ -867,7 +911,7 @@ class ExampleApp(QtWidgets.QMainWindow):
 
     # ОПРЕДЕЛЕНИЕ КОЭФФИЦИЕНТА ПРИРАЩЕНИЯ ОТ ВЫПУЩЕННЫХ ЗАКРЫЛКОВ
     def find_dCxo_zak(self, bzak, delta):
-        list_delta = [float('%.1f' % i) for i in np.arange(0, 0.9, 0.1)]
+        list_delta = [float('%.1f' % i) for i in np.arange(0, 0.9, 0.1)] # МОЖЕТ БЫТЬ 1 ???
 
         if (bzak == 0.3 or bzak == 0.1) and delta in list_delta:
             return self.request_dcxo(bzak, delta)
@@ -894,6 +938,121 @@ class ExampleApp(QtWidgets.QMainWindow):
         self.cursor.execute(Sql_request)
         return self.cursor.fetchone()[0]
 
+
+    # ОПРЕДЕЛЕНИЕ КОЭФ nM ТЕЛО ВРАЩЕНИЯ
+    def call_nM_body_rotation(self, la_nch, M):
+        list_la_nch = [1,2,3,4,5]
+        nM = 0
+
+        if la_nch in list_la_nch:
+            nM = self.find_nM_body_rotation(la_nch, M)
+        elif la_nch > 5:
+            nM = self.find_nM_body_rotation(6, M)
+        elif la_nch < 1:
+            nM = self.find_nM_body_rotation(1, M)
+        else:
+            flag = False
+            i = 0
+            while not flag:
+                if list_la_nch[i] < la_nch < list_la_nch[i + 1]:
+                    first = self.find_nM_body_rotation(list_la_nch[i], M)
+                    second = self.find_nM_body_rotation(list_la_nch[i+1], M)
+                    #print(first)
+                    #print(second)
+                    part =  (first - second) / 10
+                    nM = first - (la_nch - first) * part
+                    flag = True
+                else:
+                    i += 1
+
+        return float('%.4f' % nM)
+
+    def find_nM_body_rotation(self, la_nch, M):
+        list_M = [float('%.1f' % i) for i in np.arange(0.2, 1, 0.1)]
+        nM = 0
+        try:
+            nM = self.request_nM_body_rotation(la_nch, M)
+        except:
+            if M < 0.2:
+                nM = 1
+            elif M > 0.9:
+                y1 = self.call_nM_body_rotation(la_nch, 0.8)
+                y2 = self.call_nM_body_rotation(la_nch, 0.9)
+                return self.cal_system(0.8, y1, 0.9, y2, M)
+            else:
+                flag = False
+                i = 0
+                while not flag:
+                    if list_M[i] < M < list_M[i + 1]:
+                        y1 = self.request_nM_body_rotation(la_nch, list_M[i])
+                        y2 = self.request_nM_body_rotation(la_nch, list_M[i + 1])
+                        return self.cal_system(list_M[i], y1, list_M[i + 1], y2, M)
+                    else:
+                        i += 1
+        return float(nM)
+
+    def request_nM_body_rotation(self, la_nch, M):
+        Sql_request = 'SELECT nM FROM Коэф_nM_тело_вращения ' \
+                      'WHERE lamda_nch= %s AND M= %s' % (la_nch, M)
+        self.cursor.execute(Sql_request)
+        return self.cursor.fetchone()[0]
+
+        # ОПРЕДЕЛЕНИЕ КОЭФ nM КРЫЛО
+    def call_nM_wing(self, c_, M):
+        list_c_ = [0,4,8,12,20]
+        nM = 0
+
+        if c_ in list_c_:
+            nM = self.find_nM_wing(c_, M)
+        elif c_ > 20:
+            nM = self.find_nM_wing(20, M)
+        else:
+            flag = False
+            i = 0
+            while not flag:
+                if list_c_[i] < c_ < list_c_[i + 1]:
+                    first = self.find_nM_wing(list_c_[i], M)
+                    second = self.find_nM_wing(list_c_[i + 1], M)
+                    print(first)
+                    print(second)
+                    part = (second - first) / 40 #!!!!!!!
+                    nM = (c_ % first) * part * 10 + first
+                    flag = True
+                else:
+                    i += 1
+
+        return float('%.4f' % nM)
+
+    def find_nM_wing(self, c_, M):
+        list_M = [float('%.1f' % i) for i in np.arange(0.2, 1, 0.1)]
+        nM = 0
+        try:
+            nM = self.request_nM_wing(c_, M)
+        except:
+            if M < 0.2:
+                nM = 1
+            elif M > 0.9:
+                y1 = self.call_nM_wing(c_, 0.8)
+                y2 = self.call_nM_wing(c_, 0.9)
+                return self.cal_system(0.8, y1, 0.9, y2, M)
+            else:
+                flag = False
+                i = 0
+                while not flag:
+                    if list_M[i] < M < list_M[i + 1]:
+                        y1 = self.request_nM_wing(c_, list_M[i])
+                        y2 = self.request_nM_wing(c_, list_M[i + 1])
+                        return self.cal_system(list_M[i], y1, list_M[i + 1], y2, M)
+                    else:
+                        i += 1
+        return float(nM)
+
+    def request_nM_wing(self, c_, M):
+        Sql_request = 'SELECT nM FROM Коэф_nM_крыло ' \
+                      'WHERE c_= %s AND M= %s' % (c_, M)
+        self.cursor.execute(Sql_request)
+        return self.cursor.fetchone()[0]
+
     # ОТКРЫТИЕ ВКЛАДОК ПО КНОПКАМ
     def pressedWing(self):
         self.main.tabWidget_2.setCurrentIndex(0)
@@ -904,7 +1063,9 @@ class ExampleApp(QtWidgets.QMainWindow):
         # nc_br = self.find_nc_body_rotate(8)
         # print('nc_br = ' + str(nc_br))
         # print('delta = ' + str(self.call_delta(2.2, 13)))
-       # print('dCxo_zak = ' + str(self.find_dCxo_zak(0.2, 0.68)))
+        # print('dCxo_zak = ' + str(self.find_dCxo_zak(0.2, 0.68)))
+        # print('nM тело = ' + str(self.call_nM_body_rotation(2.7, 0.95)))
+        print('nM крыло = ' + str(self.call_nM_wing(6, 0.7)))
 
         self.iconbutton(self.main.buWing, self.button)
 
@@ -1401,7 +1562,7 @@ class ExampleApp(QtWidgets.QMainWindow):
 
         # ЗАПОЛНЕНИЕ МАССИВОВ ДАННЫМИ
         global linear_size, c_lamda_el_for_cxa, Sk_el_for_cxa, n_el_for_cxa
-        linear_size = [b, bgo, bvo, bp, lf, lgd, lgsh, 0]
+        linear_size = [b, bgo, bvo, bp, lf, lgd, lgsh, 0]  # фонарь!=0
         c_lamda_el_for_cxa = [c_, cgo_, cvo_, cp_, lamdaf, lamdagd, lamdagsh, 0]
         Sk_el_for_cxa = [S, Sgo, Svo, Sp, Ssm * 0.5, Ssm_gd * 0.5, Ssm_gsh * 0.5, 0]
         n_el_for_cxa = [1, ngo, nvo, npylon, 1, ngd, ngsh, nlight]
@@ -1414,6 +1575,9 @@ class ExampleApp(QtWidgets.QMainWindow):
                     math.cos(x_degree * math.pi / 180) + (0.365 * cya ** 2) / math.cos(
                 x_degree * math.pi / 180) ** 5)
             arr_Mkr.append(float('%.3f' % expression))
+
+        global list_Mkr
+        list_Mkr = arr_Mkr.copy()
 
         # Занесение координат в БД
         arr = []
@@ -1496,15 +1660,11 @@ class ExampleApp(QtWidgets.QMainWindow):
         self.figure.tight_layout()
         self.canvas.draw()
 
-        # po = plt.gca()
-        # line = po.lines
-        # print(line.get_xydata())
 
     # ПОСТРОЕНИЕ ВСПОМОГАТЕЛЬНОЙ КРИВОЙ cya = f(a)
     def MakeHelp(self):
         self.main.buUp.setVisible(True)
         self.iconbutton(self.main.buHelp, self.button_curve)
-
         self.main.tabWidget.setCurrentIndex(1)
         self.fhelp.clear()
         ax = self.fhelp.add_subplot(111)
@@ -1520,14 +1680,14 @@ class ExampleApp(QtWidgets.QMainWindow):
         # Коэф cya max
         global Kn, Cyamax
         Kn = float('%.3f' % self.find_Kn(n))
-        print('Kn = ' + str(Kn))
         self.find_Cyamaxprof()
         Cyamax = float('%.3f' % (Cyamaxprof * Kn * (1 + math.cos(x_degree * math.pi / 180)) / 2))
-        print('Cyamax = ' + str(Cyamax))
         k = cya_py2 / (alfa_px2 - a0)
         b = (-1) * k * a0
         px4 = float('%.3f' % ((Cyamax - b) / k))
 
+        print('Kn = ' + str(Kn))
+        print('Cyamax = ' + str(Cyamax))
         # Точка 3 - (x, 0.85 * суа_max)
         cya_py3 = float('%.3f' % (0.85 * Cyamax))
         px3 = float('%.3f' % ((cya_py3 - b) / k))
@@ -1536,12 +1696,6 @@ class ExampleApp(QtWidgets.QMainWindow):
         deltaalfa = 2  # !!! произвольно
         px5 = px4 + deltaalfa
         py5 = Cyamax
-
-        self.main.la_1_help.setText(str(a0) + '; ' + str(0))
-        self.main.la_2_help.setText(str(alfa_px2) + '; ' + str(cya_py2))
-        self.main.la_3_help.setText(str(px3) + '; ' + str(cya_py3))
-        self.main.la_4_help.setText(str(px4) + '; ' + str(Cyamax))
-        self.main.la_5_help.setText(str(px5) + '; ' + str(Cyamax))
 
         # заполнение списков для последующего использования во вспомогательной поляре
         global a_list_help, cya_list_help
@@ -1556,12 +1710,6 @@ class ExampleApp(QtWidgets.QMainWindow):
             a += 3
         a_list_help.append(px5)
         cya_list_help.append(Cyamax)
-
-
-        self.main.la_Re_help.setText(str(Re))
-        self.main.la_Vmin_help.setText(str(float('%.3f' % Vmin)))
-        self.main.la_Cyamaxprof_help.setText(str(Cyamaxprof))
-        self.main.la_Kn_help.setText(str(Kn))
 
         # Отрисовка
         arrX_ = [a0, alfa_px2, px3, px4]
@@ -1581,14 +1729,35 @@ class ExampleApp(QtWidgets.QMainWindow):
         arr_intr_Y = [cya_py3, py, py5, py6]
         tck, u = interpolate.splprep([arr_intr_X, arr_intr_Y], k=2, s=0)
         xnew, ynew = interpolate.splev(np.linspace(0, 1, 100), tck, der=0)
-
         ax.plot(arr_intr_X, arr_intr_Y, ' ', xnew, ynew, color='k')
 
-        ax.plot(a0, 0, marker='.')
-        ax.plot(alfa_px2, cya_py2, marker='.')
-        ax.plot(px3, cya_py3, marker='.')
-        ax.plot(px4, Cyamax, marker='.')
-        ax.plot(px5, py5, marker='.')
+        ax.plot(a0, 0, marker='o')
+        ax.plot(alfa_px2, cya_py2, marker='o')
+        ax.plot(px3, cya_py3, marker='o')
+        ax.plot(px4, Cyamax, marker='o')
+        ax.plot(px5, py5, marker='o')
+
+        ax.legend(loc='lower right')
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
+        ax.set_ylabel('$\it{Cya}$', loc = 'top', rotation=0)
+        ax.set_xlabel('$\it{α, °}$', loc = 'right', fontsize=11)
+
+        self.fhelp.tight_layout()
+        self.chelp.draw()
+
+        # Отображение в окне
+        self.main.la_1_help.setText(str(a0) + '; ' + str(0))
+        self.main.la_2_help.setText(str(alfa_px2) + '; ' + str(cya_py2))
+        self.main.la_3_help.setText(str(px3) + '; ' + str(cya_py3))
+        self.main.la_4_help.setText(str(px4) + '; ' + str(Cyamax))
+        self.main.la_5_help.setText(str(px5) + '; ' + str(Cyamax))
+
+        self.main.la_Re_help.setText(str(Re))
+        self.main.la_Vmin_help.setText(str(float('%.3f' % Vmin)))
+        self.main.la_Cyamaxprof_help.setText(str(Cyamaxprof))
+        self.main.la_Kn_help.setText(str(Kn))
+
 
         # x=np.array( [px3,px5])
         # y = np.array([cya_py3, Cyamax])
@@ -1598,16 +1767,7 @@ class ExampleApp(QtWidgets.QMainWindow):
         # ax.plot(x_new, y_smooth)
 
        # ax.set_title('Вспомогательная кривая Cya = f(a)', loc='left', pad=5, fontsize=11)
-        ax.legend(loc='lower right')
-        ax.spines["top"].set_visible(False)
-        ax.spines["right"].set_visible(False)
-        ax.set_ylabel('$\it{Cya}$', loc = 'top', rotation=0)
-        ax.set_xlabel('$\it{α, °}$', loc = 'right', fontsize=11)
-        #ax.vlines(cya_rasch, arr_Mkr[7], Mrasch, color='lightgray',linewidth=1,linestyle='-')
-        self.fhelp.tight_layout()
 
-
-        self.chelp.draw()
 
     # ПОИСК КОЭФФИЦИЕНТА ОТ ТИПА ЗАКРЫЛОК
     def find_zak(self, Flap_type):
@@ -1617,7 +1777,6 @@ class ExampleApp(QtWidgets.QMainWindow):
         cur = self.cursor.fetchone()
         dCyamax = float(cur[2])
         dCxomax = float(cur[3])
-
 
     # ПОСТРОЕНИЕ ВЗЛЕТНОЙ КРИВОЙ (С УЧЕТОМ И БЕЗ УЧЕТА ВЛИЯНИЯ ЭКРАНА ЗЕМЛИ)
     def MakeUp(self):
@@ -1710,8 +1869,9 @@ class ExampleApp(QtWidgets.QMainWindow):
         cya_list_up.append(0)
         a = 1  # !!!!!
         while px2 - a > 3:
-            a_list_up.append(a)
-            cya_list_up.append(float('%.3f' % (k * a + b)))
+            angle = round(a0_vzl+a)
+            a_list_up.append(angle)
+            cya_list_up.append(float('%.3f' % (k * angle + b)))
             a += 3
         a_list_up.append(px2)
         cya_list_up.append(Cyamax_vzl)
@@ -1783,8 +1943,9 @@ class ExampleApp(QtWidgets.QMainWindow):
         cya_list_up_scrin.append(0)
         a = 1  # !!!!!
         while px2_s - a > 3:
-            a_list_up_scrin.append(a)
-            cya_list_up_scrin.append(float('%.3f' % (k * a + b)))
+            angle = round(a0_vzl+a)
+            a_list_up_scrin.append(angle)
+            cya_list_up_scrin.append(float('%.3f' % (k * angle + b)))
             a += 3
         a_list_up_scrin.append(px2_s)
         cya_list_up_scrin.append(Cyamax_vzl_scrin)
@@ -1808,6 +1969,7 @@ class ExampleApp(QtWidgets.QMainWindow):
             '%.3f' % (4.83 * dCyamax * Sobzak_ * abs(da0_pos) * (math.cos(xshzak * math.pi / 180) ** 2)))
 
         # КПС при посадке
+        global Cya_max_pos
         Cya_max_pos = float('%.3f' % (Cyamax + dCyamax_pr + dCya_max_zak_pos))
         a0_pos = float('%.3f' % (a0 + da0_pos * 180 / math.pi))
 
@@ -1860,6 +2022,21 @@ class ExampleApp(QtWidgets.QMainWindow):
         ax.set_xlabel('$\it{α, °}$', loc='right', fontsize=11)
         self.fDown.tight_layout()
 
+        # заполнение списков для взлетной кривой
+        global a_list_down, cya_list_down
+        a_list_down.clear()
+        cya_list_down.clear()
+        a_list_down.append(a0_pos)
+        cya_list_down.append(0)
+        a = 1  # !!!!!
+        while px2 - a > 3:
+            angle = round((a0_pos+a))
+            a_list_down.append(a)
+            cya_list_down.append(float('%.3f' % (k * a + b)))
+            a += 3
+        a_list_down.append(px2)
+        cya_list_down.append(Cya_max_pos)
+
         # 2) C учетом влияния экрана земли
 
         #    определение переменных
@@ -1875,7 +2052,9 @@ class ExampleApp(QtWidgets.QMainWindow):
         dCya_max_zak_pos_scrin = float('%.3f' % (-0.115 * math.exp(-0.5 * h_pos) * Cya_max_pos))
 
         # макс КПС силы при посадке с учетом экрана земли
+        global Cya_max_pos_scrin, lamdaef_down_scrin
         Cya_max_pos_scrin = float('%.3f' % (Cya_max_pos + dCya_max_zak_pos_scrin))
+        lamdaef_down_scrin=lamda_scrin
 
         #   Точка
         cya_scrin = float('%.3f' % (caya_scrin * (5 - a0_pos)))
@@ -1912,6 +2091,21 @@ class ExampleApp(QtWidgets.QMainWindow):
         ax.plot(points_a_s, points_Cya_s, marker=' ', color='tab:blue')
         ax.plot(px2_s, Cya_max_pos_scrin, marker='.', color='k')
         self.cDown.draw()
+
+        # заполнение списков для взлетной кривой
+        global a_list_down_scrin, cya_list_down_scrin
+        a_list_down_scrin.clear()
+        cya_list_down_scrin.clear()
+        a_list_down_scrin.append(a0_pos)
+        cya_list_down_scrin.append(0)
+        a = 1  # !!!!!
+        while px2_s - a > 3:
+            angle =round(a0_pos+a)
+            a_list_down_scrin.append(a)
+            cya_list_down_scrin.append(float('%.3f' % (k * a + b)))
+            a += 3
+        a_list_down_scrin.append(px2_s)
+        cya_list_down_scrin.append(Cya_max_pos_scrin)
 
     # Выбор чисел Маха от типа двигателя
     def func_type(self, type):
@@ -2009,6 +2203,7 @@ class ExampleApp(QtWidgets.QMainWindow):
         print('Кинт = ' + str(Kint))
         print('cxk = ' + str(cxk_light))
 
+        global xtau_el_for_cxa
         Re_el_for_cxa = []
         xtau_el_for_cxa = []
         cf_el_for_cxa = []
@@ -2033,7 +2228,7 @@ class ExampleApp(QtWidgets.QMainWindow):
                 # коэф сопротивления плоской пластине
                 cf_el_for_cxa.append(self.find_2cf(xtau_el_for_cxa[index], Re_el))
                 # коэф nМ
-                nm_el_for_cxa.append(1)
+                nm_el_for_cxa.append(1)  #    ВСТАВИТЬ ФУНКЦИЮ
                 # коэф nc
                 if index < 4:
                     nc_el_for_cxa.append(self.find_nc_wing(xtau_el_for_cxa[index], c_lamda_el_for_cxa[index]))
@@ -2052,12 +2247,13 @@ class ExampleApp(QtWidgets.QMainWindow):
                 nint_el_for_cxa.append(0)
                 cxk_el_for_cxa.append(0)
 
+        global S_proiz, cxo
         for el in Sk_el_for_cxa:
             i = Sk_el_for_cxa.index(el)
             chislitel = n_el_for_cxa[i] * cxk_el_for_cxa[i] * el
             chislitel_el_for_cxa.append(float('%.5f' % chislitel))
+            S_proiz.append(float('%.5f' % (n_el_for_cxa[i] * nc_el_for_cxa[i]*nint_el_for_cxa[i]*el)))
 
-        global cxo
         cxo = float('%.5f' % (sum(chislitel_el_for_cxa) * 1.04 / S))
 
         th = ['Крыло', 'Горизонтальное оперение', 'Вертикальное оперение', 'Пилон', 'Фюзеляж',
@@ -2084,6 +2280,8 @@ class ExampleApp(QtWidgets.QMainWindow):
         print(table)  # Печатаем таблицу
         print('cxo = ' + str(cxo))
 
+
+
         # Приращение коэффициента профильного сопротивления
         cya__list = []
         dCxp_list = []
@@ -2091,21 +2289,35 @@ class ExampleApp(QtWidgets.QMainWindow):
         Cxi_list = []
         # Коэффициент лобового сопротивления
         Cxa_list=[]
+        self.fP_Help.clear()
+        ax = self.fP_Help.add_subplot()
+        kmax=0
 
         for el in cya_list_help:
-            #
+            # Отношение КПС к максимальному КПС
             cya_ = el/Cyamax
             cya__list.append(float('%.4f' % (cya_)))
-            #
+            # Приращение коэффициента профильного сопротивления
             exp_dCxp = math.pow(cya_, 4)*(1-math.exp(-0.1*math.pow((cya_ - 0.4), 2)))
             dCxp_list.append(float('%.4f' % exp_dCxp))
-            #
+            # Коэффициент вихревого индуктивного сопротивления
             exp_Cxi = ((el*el)/(math.pi*lamdaef))*((1+delta)/math.sqrt(1-M*M))
             Cxi_list.append(float('%.4f' % exp_Cxi))
-            #
+            # Коэффициент лобового сопротивления
             Cxa_list.append(float('%.4f' % (cxo+exp_dCxp+exp_Cxi)))
+        # Отрисовка с помощью интерполяции
+        tck, u = interpolate.splprep([Cxa_list, cya_list_help], s=0)
+        xnew, ynew = interpolate.splev(np.linspace(0, 1, 100), tck)
+        ax.plot(Cxa_list, cya_list_help, '.', xnew, ynew, color='tab:blue')
+        for x in xnew:  # построение касательной к поляре
+            k = ynew[np.where(xnew == x)]/x
+            if kmax < k:
+                kmax = k
+                xmax=x
+        ax.plot(xmax, kmax*xmax, '.', [0, xmax*2], [0, kmax*xmax*2 ], linewidth = 1, color = 'crimson')
 
-# КОЛИЧЕТСВО ДВИГАТЕЛЕЙ ЭТО НУМЕР !!!!!!!!!
+
+        # КОЛИЧЕТСВО ДВИГАТЕЛЕЙ ЭТО НУМЕР !!!!!!!!!
 
         table_coordinats = PrettyTable(a_list_help)
         table_coordinats.add_row(cya_list_help)
@@ -2114,17 +2326,11 @@ class ExampleApp(QtWidgets.QMainWindow):
         table_coordinats.add_row(Cxi_list)
         table_coordinats.add_row(Cxa_list)
 
-        print(table_coordinats)
+        # print(table_coordinats)
 
         self.main.la_Vminpol.setText(str(Vmin_pol))
         self.main.la_M_Vmin.setText(str(float('%.3f' % M)))
 
-        # Отрисовка
-        self.fP_Help.clear()  # отчистка графика
-        ax = self.fP_Help.add_subplot()
-        tck, u = interpolate.splprep([Cxa_list, cya_list_help], k=2)
-        xnew, ynew = interpolate.splev(np.linspace(0, 1, 100), tck, der=0)
-        ax.plot(Cxa_list, cya_list_help, '.', xnew, ynew, color='tab:blue')
 
         index=0
         for i, j in zip(Cxa_list, cya_list_help):
@@ -2134,10 +2340,7 @@ class ExampleApp(QtWidgets.QMainWindow):
         # point_x = [min(Cxa_list),min(Cxa_list)]
         # point_y = [0, max(cya_list_help)/2]
         # ax.plot(point_x, point_y, color='green')
-
-
-
-       # ax.set_title('Вспомогательная поляра', loc='left', pad=5, fontsize=11)
+        # ax.set_title('Вспомогательная поляра', loc='left', pad=5, fontsize=11)
         ax.spines["top"].set_visible(False)
         ax.spines["right"].set_visible(False)
         ax.set_ylabel('$\it{Cya}$', loc='top', rotation=0)
@@ -2145,13 +2348,14 @@ class ExampleApp(QtWidgets.QMainWindow):
         self.fP_Help.tight_layout()
         self.cP_Help.draw()
 
-        self.MakeUpPolyr()
+        #self.MakeUpPolyr()
 
     # ВЗЛЕТНАЯ ПОЛЯРА
     def MakeUpPolyr(self):
         # print(dCxomax)
         # print(self.find_dCxo_zak(bzak_, deltavzl))
         # print(deltavzl)
+        self.main.tabPolyr.setCurrentIndex(1)
         print()
         print("ВЗЛЕТНАЯ ПОЛЯРА ")
 
@@ -2189,7 +2393,7 @@ class ExampleApp(QtWidgets.QMainWindow):
         table_coordinats.add_row(dCxp_list_up)
         table_coordinats.add_row(Cxi_list_up)
         table_coordinats.add_row(Cxa_list_up)
-        print(table_coordinats)
+        # print(table_coordinats)
 
         # 1) c учетом влияния экрана земли
         delta = self.call_delta(lamdaef_scrin, n)
@@ -2200,7 +2404,7 @@ class ExampleApp(QtWidgets.QMainWindow):
 
         Vvzl_scrin = math.sqrt((2 * Gvzl * g) / (0.8 * p_zero * S * Cyamax_vzl_scrin))  # !!!!! почему с экраном ?
         print('V_vzl_scrin = ' + str(float('%.3f' % Vvzl_scrin)))
-        Mvzl = Vvzl_scrin / 340.294  # CONST
+        Mvzl_scrin = Vvzl_scrin / 340.294  # CONST
         print('Mvzl_scrin = ' + str(float('%.3f' % Mvzl_scrin)))
 
         for el in cya_list_up_scrin:
@@ -2222,7 +2426,327 @@ class ExampleApp(QtWidgets.QMainWindow):
         table_coordinats_scrin.add_row(dCxp_list_up_scrin)
         table_coordinats_scrin.add_row(Cxi_list_up_scrin)
         table_coordinats_scrin.add_row(Cxa_list_up_scrin)
-        print(table_coordinats_scrin)
+        # print(table_coordinats_scrin)
+
+        # отрисовка
+        self.fP_Up.clear()  # отчистка графика
+        ax = self.fP_Up.add_subplot()
+        # без экрана
+        tck, u = interpolate.splprep([Cxa_list_up, cya_list_up], s=0)
+        xnew, ynew = interpolate.splev(np.linspace(0, 1, 50), tck)
+        ax.plot(Cxa_list_up, cya_list_up, '.', xnew, ynew, color='k')
+
+        index=0
+        for i, j in zip(Cxa_list_up, cya_list_up):
+            ax.annotate(str(a_list_up[index]), xy=(i, j))
+            index +=1
+
+        # с экраном
+        tck, u = interpolate.splprep([Cxa_list_up_scrin, cya_list_up_scrin], s=0)
+        xnew, ynew = interpolate.splev(np.linspace(0, 1, 50), tck)
+        ax.plot(Cxa_list_up_scrin, cya_list_up_scrin, '.', xnew, ynew, color='tab:blue')
+
+        index = 0
+        for i, j in zip(Cxa_list_up_scrin, cya_list_up_scrin):
+            ax.annotate(str(a_list_up_scrin[index]), xy=(i, j))
+            index += 1
+
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
+        ax.set_ylabel('$\it{Cya}$', loc='top', rotation=0)
+        ax.set_xlabel('$\it{Cxa}$', loc='right', fontsize=11)
+        self.fP_Up.tight_layout()
+        self.cP_Up.draw()
+
+    # ПОСАДОЧНАЯ ПОЛЯРА
+    def MakeDownPolyr(self):
+        # print(dCxomax)
+        # print(self.find_dCxo_zak(bzak_, deltavzl))
+        # print(deltavzl)
+        self.main.tabPolyr.setCurrentIndex(2)
+        print()
+        print("ПОСАДОЧНАЯ ПОЛЯРА ")
+
+        # 1) без учета влияния экрана земли
+        delta = self.call_delta(lamdaef, n)
+        cya__list_down = []
+        dCxp_list_down = []
+        Cxi_list_down = []
+        Cxa_list_down = []
+
+
+        cxo_down =  cxo + 0.5*cxo + 10 * self.find_dCxo_zak(bzak_, deltapos) * Sobzak_ * dCxomax #!!!!!!!!!!!!!!!
+        print('cxo_down = '+ str(float('%.3f' % cxo_down)))
+        Vdown = math.sqrt((2*Gpol*g)/(0.8 * p_zero * S * Cya_max_pos)) #!!!!! почему с экраном ?
+        print('V_down = '+ str(float('%.3f' % Vdown)))
+        Mdown = Vdown/340.294 # CONST
+        print('Mdown = '+ str(float('%.3f' % Mdown)))
+
+        for el in cya_list_down:
+            #
+            cya_ = el /Cya_max_pos # какой суа макс нужен ??
+            cya__list_down.append(float('%.4f' % (cya_)))
+            #
+            exp_dCxp = math.pow(cya_, 4) * (1 - math.exp(-0.1 * math.pow((cya_ - 0.4), 2)))
+            dCxp_list_down.append(float('%.4f' % exp_dCxp))
+            #
+            exp_Cxi = ((el * el) / (math.pi * lamdaef)) * ((1 + delta) / math.sqrt(1 - Mdown * Mdown))
+            Cxi_list_down.append(float('%.4f' % exp_Cxi))
+            #
+            Cxa_list_down.append(float('%.4f' % (cxo_down + exp_dCxp + exp_Cxi)))
+
+        table_coordinats = PrettyTable(a_list_down)
+        table_coordinats.add_row(cya_list_down)
+        table_coordinats.add_row(cya__list_down)
+        table_coordinats.add_row(dCxp_list_down)
+        table_coordinats.add_row(Cxi_list_down)
+        table_coordinats.add_row(Cxa_list_down)
+        # print(table_coordinats)
+
+        # 1) c учетом влияния экрана земли
+        delta = self.call_delta(lamdaef_down_scrin, n)
+        cya__list_down_scrin = []
+        dCxp_list_down_scrin = []
+        Cxi_list_down_scrin = []
+        Cxa_list_down_scrin = []
+
+        Vdown_scrin = math.sqrt((2 * Gpol * g) / (0.8 * p_zero * S * Cya_max_pos_scrin))  # !!!!! почему с экраном ?
+        print('V_down_scrin = ' + str(float('%.3f' % Vdown_scrin)))
+        Mdown_scrin = Vdown_scrin / 340.294  # CONST
+        print('Mdown_scrin = ' + str(float('%.3f' % Mdown_scrin)))
+
+        for el in cya_list_down_scrin:
+            #
+            cya_ = el / Cya_max_pos_scrin  # какой суа макс нужен ??
+            cya__list_down_scrin.append(float('%.4f' % (cya_)))
+            #
+            exp_dCxp = math.pow(cya_, 4) * (1 - math.exp(-0.1 * math.pow((cya_ - 0.4), 2)))
+            dCxp_list_down_scrin.append(float('%.4f' % exp_dCxp))
+            #
+            exp_Cxi = ((el * el) / (math.pi * lamdaef_down_scrin)) * ((1 + delta) / math.sqrt(1 - Mdown_scrin * Mdown_scrin))
+            Cxi_list_down_scrin.append(float('%.4f' % exp_Cxi))
+            #
+            Cxa_list_down_scrin.append(float('%.4f' % (cxo_down + exp_dCxp + exp_Cxi)))
+
+        table_coordinats_scrin = PrettyTable(a_list_down_scrin)
+        table_coordinats_scrin.add_row(cya_list_down_scrin)
+        table_coordinats_scrin.add_row(cya__list_down_scrin)
+        table_coordinats_scrin.add_row(dCxp_list_down_scrin)
+        table_coordinats_scrin.add_row(Cxi_list_down_scrin)
+        table_coordinats_scrin.add_row(Cxa_list_down_scrin)
+        # print(table_coordinats_scrin)
+
+        # отрисовка
+        self.fP_Down.clear()  # отчистка графика
+        ax = self.fP_Down.add_subplot()
+        # без экрана
+        tck, u = interpolate.splprep([Cxa_list_down, cya_list_down], k=2, s = 0)
+        xnew, ynew = interpolate.splev(np.linspace(0, 1, 100), tck)
+        ax.plot(Cxa_list_down, cya_list_down, '.', xnew, ynew, color='k')
+
+        index=0
+        for i, j in zip(Cxa_list_down, cya_list_down):
+            ax.annotate(str(a_list_down[index]), xy=(i, j))
+            index +=1
+
+        # с экраном
+        tck, u = interpolate.splprep([Cxa_list_down_scrin, cya_list_down_scrin], k =2, s=0)
+        xnew, ynew = interpolate.splev(np.linspace(0, 1, 100), tck)
+        ax.plot(Cxa_list_down_scrin, cya_list_down_scrin, '.', xnew, ynew, color='tab:blue')
+
+        index = 0
+        for i, j in zip(Cxa_list_down_scrin, cya_list_down_scrin):
+            ax.annotate(str(a_list_down_scrin[index]), xy=(i, j))
+            index += 1
+
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
+        ax.set_ylabel('$\it{Cya}$', loc='top', rotation=0)
+        ax.set_xlabel('$\it{Cxa}$', loc='right', fontsize=11)
+        self.fP_Down.tight_layout()
+        self.cP_Down.draw()
+
+
+    # КРЕЙСЕРСКИЕ ПОЛЯРЫ
+    def MakeCruisePolyr(self):
+        self.main.tabPolyr.setCurrentIndex(3)
+        self.fP_Cre.clear()  # отчистка графика
+        ax = self.fP_Cre.add_subplot()
+
+        list_M = self.func_type(type)
+        list_M.pop(0)
+        print(list_M)
+        list_Re = []
+        list_Xak=[]
+        list_2cf=[]
+        list_nM = []
+        list_cxo_cruise = []
+        list_lamdan = c_lamda_el_for_cxa.copy()
+        list_lamdan[4]=lamdanf
+        list_lamdan[5]=lamdan_gd
+        list_lamdan[6]=lamdan_gsh
+
+        print ('КРЕЙСЕРСКИЕ ПОЛЯРЫ')
+        for M in list_M:
+            list_Re.clear()
+            list_Xak.clear()
+            list_2cf.clear()
+            list_nM.clear()
+            for el in linear_size:
+                if el != 0:
+                    index = linear_size.index(el)
+                    el_c_lamda= list_lamdan[index]
+                    xt = xtau_el_for_cxa[index]
+                    if M == 0:
+                        Re = (Vmin*el)/vH
+                    else:
+                        Re = (M * aH * el)/vH
+                    list_Re.append(float('%.3f' % Re))
+                    list_2cf.append(self.find_2cf(xt, Re))
+                    if index < 4:
+                        list_nM.append(self.call_nM_wing(el_c_lamda, M))
+                    else:
+                        list_nM.append(self.call_nM_body_rotation(el_c_lamda, M))
+                    Xak = list_2cf[index] * S_proiz[index] * list_nM[index]
+                    list_Xak.append(float('%.3f' % Xak))
+                else:
+                    list_Xak.append(0)
+                    list_Re.append(0)
+                    list_2cf.append(0)
+                    list_nM.append(0)
+
+            t = PrettyTable(['Крыло', "Гор оперение", "Вер оперение", "Пилон", "Фюзеляж", "ГД", "ГШ", "Фонарь"])
+            t.add_row(list_Re)
+            t.add_row(list_2cf)
+            t.add_row(list_nM)
+            t.add_row(list_Xak)
+            print()
+            print('M = '+ str(M))
+            print(t)
+
+            cxo_cruise = float('%.5f' % (sum(list_Xak) * 1.04 / S))
+            list_cxo_cruise.append(cxo_cruise)
+            print('cxo = ' + str(cxo_cruise))
+
+            cos = math.cos(xc_degree)
+
+        # Максимальный коэф волнового сопротивления при числе Маха =
+        Mc_xvo_max = math.pow(cos,-1) * (1 + 0.4 * (math.pow(c_, 3/2) / math.pow(cos, 2/3)) *
+                                                             (2 - lamdaef*math.pow(c_*cos*cos, 1/3)))
+        cxvo_max = (2 * math.pi * lamdaef * c_ * c_ * cos) / (2 + lamdaef * math.pow(c_, 1/3) * math.pow(cos, 5/3))
+        print('M max = ' + str(float('%.3f' % Mc_xvo_max)))
+        print('C max = ' + str(float('%.3f' % cxvo_max)))
+
+
+        # расчет координат поляр
+        list_cya = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7]
+        list_cxi=[]
+        list_cxa = []
+        list_cxvo = []
+        list_cxvi = []
+        delta = self.call_delta(lamdaef, n)
+
+        for cya in list_cya:
+            Mkr = list_Mkr[list_cya.index(cya)]
+            list_cxi.clear()
+            list_cxa.clear()
+            list_cxvo.clear()
+            list_cxvi.clear()
+            for M in list_M:
+                i = list_M.index(M)
+                # коэффициент вихревого сопротивления
+                cxi = math.pow(cya, 2)/(math.pi*lamdaef) * (1+delta)/math.sqrt(1-M*M)
+                list_cxi.append(float('%.5f' % cxi))
+
+                if type == 'ТРД':
+                    if M > Mkr:
+                        # составляющая коэф волнового сопротивления, не зависящая от cya
+                        Am = (M - Mkr) / (Mc_xvo_max - Mkr)
+                        cxvo = cxvo_max * math.pow(Am, 3) * (4 - 3 * Am)
+                        list_cxvo.append(float('%.5f' % cxvo))
+                        # коэф волнового сопротивления
+                        cxvi = 25 * lamdaef * math.pow(c_, 1 / 3) * math.pow(M - Mkr, 3) * cxi
+                        list_cxvi.append(float('%.5f' % cxvi))
+                    else:
+                        list_cxvo.append(0)
+                        list_cxvi.append(0)
+                    # КЛС
+                    cxa = list_cxo_cruise[i] + list_cxi[i]+list_cxvo[i]+list_cxvi[i]
+                    list_cxa.append(float('%.5f' % cxa))
+                else:
+                    # КЛС
+                    cxa = list_cxo_cruise[i] + list_cxi[i]
+                    list_cxa.append(float('%.5f' % cxa))
+            if type == 'ТРД':
+                t = PrettyTable()
+                t.add_column("M", list_M)
+                t.add_column("cxo",list_cxo_cruise)
+                t.add_column( "cxi", list_cxi)
+                t.add_column('cxvo', list_cxvo)
+                t.add_column('cxvi', list_cxvi)
+                t.add_column("cxa", list_cxa)
+                print()
+                print('cya = ' + str(cya))
+                print('Mkr = ' + str(Mkr))
+                print(t)
+            else:
+                t = PrettyTable()
+                t.add_column("M",list_M)
+                t.add_column("cxo",list_cxo_cruise)
+                t.add_column("cxi",list_cxi)
+                t.add_column("cxa", list_cxa)
+                print()
+                print('cya = ' + str(cya))
+                print(t)
+
+            # отрисовка
+            # print(list_cxa)
+            # y = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7]
+            # tck, u = interpolate.splprep([list_cya, y], s=0, k=2)
+            # xnew, ynew = interpolate.splev(np.linspace(0, 1, 50), tck)
+            # ax.plot(list_cya, y, '.', xnew, ynew, color='tab:blue')
+
+        # index = 0
+        # for i, j in zip(Cxa_list_up_scrin, cya_list_up_scrin):
+        #     ax.annotate(str(a_list_up_scrin[index]), xy=(i, j))
+        #     index += 1
+
+        # ax.spines["top"].set_visible(False)
+        # ax.spines["right"].set_visible(False)
+        # ax.set_ylabel('$\it{Cya}$', loc='top', rotation=0)
+        # ax.set_xlabel('$\it{Cxa}$', loc='right', fontsize=11)
+        # self.fP_Cre.tight_layout()
+
+        list_H=[0, 3000, 6000, 9000, 12000]
+        list_cya_pol = []
+        # print(list_M)
+        # print(H)
+        # ph_rash = pH
+        # ah_rash = aH
+        Vmin_rash = math.sqrt((2*Gpol*g)/(0.85*pH*S*Cyamax))
+        Mmin_rash = Vmin_rash / aH
+        if type == "ТРД":
+            for H_ in list_H:
+                self.find_with_H(H_)
+                list_cya_pol.clear()
+                for M in list_M:
+                    cya=0
+                    if M != 0:
+                        cya = (2*Gpol*g)/(pH*S*aH*aH*M*M)
+                    else:
+                        cya = (2 * Gpol * g) / (pH * S * aH*aH*Mmin_rash*Mmin_rash)
+                    list_cya_pol.append(float('%.4f' % cya))
+
+                t = PrettyTable(list_M)
+                t.add_row(list_cya_pol)
+                print()
+                print('H = ' + str(H_))
+                print(t)
+
+        self.cP_Cre.draw()
+
+
+
 
 
 
