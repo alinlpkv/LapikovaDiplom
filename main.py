@@ -28,14 +28,10 @@ b = 0
 b0 = 0
 bk = 0
 n = 0
-cmax = 0
 c_ = 0
-xc = 0
 xc_ = 0
-fmax = 0
 f_ = 0
 a0 = 0
-xf = 0
 xf_ = 0
 xc_degree = 0
 x_degree = 0
@@ -57,7 +53,6 @@ h = 0
 
 # Flap and Mulard
 lzak = 0
-bzak = 0
 bzak_ = 0
 Sobzak = 0
 Sobzak_ = 0
@@ -209,12 +204,58 @@ class DialogPlan(QtWidgets.QDialog):
 
     def setBu(self):
         self.dialog.buNext.clicked.connect(self.NextPic)
+        self.dialog.pushButton.clicked.connect(self.BackPic)
+        self.dialog.tabPlan.setTabVisible(0, False)
+        self.dialog.tabPlan.setTabVisible(1, False)
+        self.dialog.tabPlan.setTabVisible(2, False)
+        self.dialog.tabPlan.setTabVisible(3, False)
+        self.dialog.tabPlan.setTabVisible(4, False)
+        self.dialog.tabPlan.setCurrentIndex(0)
+
 
     def NextPic(self):
-        if self.dialog.stackedWidget.currentIndex() == 0:
-            self.dialog.stackedWidget.setCurrentIndex(1)
-        else:
-            self.dialog.stackedWidget.setCurrentIndex(0)
+        index = self.dialog.tabPlan.currentIndex()
+        if index == 0:
+            self.dialog.tabPlan.setCurrentIndex(1)
+            t = '2'
+        elif index == 1:
+            self.dialog.tabPlan.setCurrentIndex(2)
+            t = '3'
+        elif index == 2:
+            self.dialog.tabPlan.setCurrentIndex(3)
+            t = '4'
+        elif index == 3:
+            self.dialog.tabPlan.setCurrentIndex(4)
+            t = '5'
+        elif index == 4:
+            self.dialog.tabPlan.setCurrentIndex(0)
+            t = '1'
+
+        self.dialog.label_6.setText('Рисунок '+t)
+
+
+    def BackPic(self):
+        index = self.dialog.tabPlan.currentIndex()
+
+        if index == 0:
+            self.dialog.tabPlan.setCurrentIndex(4)
+            t='5'
+        elif index == 1:
+            self.dialog.tabPlan.setCurrentIndex(0)
+            t='1'
+        elif index == 2:
+            self.dialog.tabPlan.setCurrentIndex(1)
+            t='2'
+        elif index == 3:
+            self.dialog.tabPlan.setCurrentIndex(2)
+            t='3'
+        elif index == 4:
+            self.dialog.tabPlan.setCurrentIndex(3)
+            t='4'
+
+        self.dialog.label_6.setText('Рисунок ' + t)
+
+
 
 
 # ДИАЛОГОВОЕ ОКНО С ЗАКРЫЛКАМИ
@@ -273,6 +314,7 @@ class ExampleApp(QtWidgets.QMainWindow):
         self.button = [self.main.buWing, self.main.buFlapMulard, self.main.buTail, self.main.buPylon,
                        self.main.buGondola, self.main.buFuselage, self.main.buCommonData]
         self.button_curve = [self.main.buMkr, self.main.buHelp, self.main.buUp, self.main.buDown, self.main.buCre]
+        self.button_polar = [self.main.buHelpPolyr, self.main.buUpPolyr, self.main.buDownPolyr, self.main.buCrePolyr, self.main.buExport]
 
         self.main.groupBox_13.setVisible(False)
         self.main.buHelp.setVisible(False)
@@ -481,7 +523,7 @@ class ExampleApp(QtWidgets.QMainWindow):
 
         pH = float(pHstr)
         aH = float(aHstr)
-        vH = float(vHstr)
+        vH = float(vHstr) * math.pow(10,-5)
 
         print('pH = ' + str(pH))
         print('aH = ' + str(aH))
@@ -648,11 +690,7 @@ class ExampleApp(QtWidgets.QMainWindow):
         list_b_ = [0.1, 0.2, 0.3]
         list_delta = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.2, 1.3]
         if bzak_ in list_b_:
-            if bzak_ == 0.1 and 0 <= delta <= 0.6:
-                return 0.158 * delta + 0.0022
-            elif bzak_ == 0.2 and 0 <= delta <= 0.5:
-                return 0.225 * delta + 0.0125
-            elif delta in list_delta:
+            if delta in list_delta:
                 Sql_request = 'SELECT delta_a0 FROM "Приращение взлетного угла" ' \
                               'WHERE b_zak = %s AND бvzl_pos= %s' % (bzak_, delta)
                 self.cursor.execute(Sql_request)
@@ -680,7 +718,7 @@ class ExampleApp(QtWidgets.QMainWindow):
                 self.cursor.execute(Sql_request)
                 second = float(self.cursor.fetchone()[0])
                 # print(second)
-                return float('%.3f' % ((first + second) / 2))
+                return float('%.3f' % (self.cal_system(list_delta[index], first , list_delta[index + 1], second, delta)))
 
     # ОПРЕДЕЛЕНИЕ КОЭФФИЦИЕНТА СОПРОТИВЛЕНИЯ ТРЕНИЯ ПЛОСКОЙ ПЛАСТИНЫ 2Cf
     def find_2cf(self, xt, Re):
@@ -960,7 +998,7 @@ class ExampleApp(QtWidgets.QMainWindow):
                     #print(first)
                     #print(second)
                     part =  (first - second) / 10
-                    nM = first - (la_nch - first) * part
+                    nM = first - (la_nch - list_la_nch[i]) * part *10
                     flag = True
                 else:
                     i += 1
@@ -1013,10 +1051,11 @@ class ExampleApp(QtWidgets.QMainWindow):
                 if list_c_[i] < c_ < list_c_[i + 1]:
                     first = self.find_nM_wing(list_c_[i], M)
                     second = self.find_nM_wing(list_c_[i + 1], M)
-                    print(first)
-                    print(second)
-                    part = (second - first) / 40 #!!!!!!!
-                    nM = (c_ % first) * part * 10 + first
+                    # print(first)
+                    # print(second)
+                    r = list_c_[i + 1] - list_c_[i]
+                    part = (second - first) / (r*10)
+                    nM = first + (c_ - list_c_[i]) * part * 10
                     flag = True
                 else:
                     i += 1
@@ -1065,7 +1104,7 @@ class ExampleApp(QtWidgets.QMainWindow):
         # print('delta = ' + str(self.call_delta(2.2, 13)))
         # print('dCxo_zak = ' + str(self.find_dCxo_zak(0.2, 0.68)))
         # print('nM тело = ' + str(self.call_nM_body_rotation(2.7, 0.95)))
-        print('nM крыло = ' + str(self.call_nM_wing(6, 0.7)))
+        # print('nM крыло = ' + str(self.call_nM_body_rotation(3.116, 0.7)))
 
         self.iconbutton(self.main.buWing, self.button)
 
@@ -1133,22 +1172,16 @@ class ExampleApp(QtWidgets.QMainWindow):
             self.main.ed_n.setText(str(n))
 
             # Относительная толщина профиля
-            global cmax, c_
-            cmax = float(self.main.ed_cmax.text().replace(',', '.'))
-            c_ = float('%.2f' % (cmax / b))
-            self.main.ed_c_.setText(str(c_))
+            global c_
+            c_ = float(self.main.dsp_c_.text().replace(',', '.'))
 
             # Относительная координата максимальной толщины
-            global xc, xc_
-            xc = float(self.main.ed_xc.text().replace(',', '.'))
-            xc_ = float('%.3f' % (xc / b))
-            self.main.ed_xc_.setText(str(xc_))
+            global xc_
+            xc_ = float(self.main.dsp_xc_.text().replace(',', '.'))
 
             # Относительная кривизна профиля
-            global fmax, f_
-            fmax = float(self.main.ed_fmax.text().replace(',', '.'))
-            f_ = float('%.3f' % (100 * fmax / b))
-            self.main.ed_f_.setText(str(f_))
+            global f_
+            f_ = float(self.main.dsp_f_.text().replace(',', '.'))
 
             # Угол атаки нулевой подъемной силы
             global a0
@@ -1157,10 +1190,8 @@ class ExampleApp(QtWidgets.QMainWindow):
             self.main.ed_a0.setText(str(a0))
 
             # Относительная координата фокуса профиля
-            global xf, xf_
-            xf = float(self.main.ed_xf.text().replace(',', '.'))
-            xf_ = float('%.3f' % (xf / b))
-            self.main.ed_xf_.setText(str(xf_))
+            global xf_
+            xf_ = float(self.main.dsp_xf_.text().replace(',', '.'))
 
             # Удлинение геометрическое
             global lamda
@@ -1222,7 +1253,7 @@ class ExampleApp(QtWidgets.QMainWindow):
 
                 # Относительная координата точки перехода ЛПС в ТПС
                 global xtau_
-                if xc == 0:
+                if xc_ == 0:
                     expression = xc_ * (1 - Sobd_)
                 else:
                     expression = 0
@@ -1261,10 +1292,8 @@ class ExampleApp(QtWidgets.QMainWindow):
             xshzak = float(self.main.ed_xshzak.text().replace(',', '.'))
 
             # Относительная хорда закрылки
-            global bzak, bzak_
-            bzak = float(self.main.ed_bzak.text().replace(',', '.'))
-            bzak_ = float('%.2f' % (bzak / b))
-            self.main.ed_bzak_.setText(str(bzak_))
+            global bzak_
+            bzak_ = float(self.main.dsb_bzak_.text().replace(',', '.'))
 
             # Относ площадь крыла, обслуживаемая закрылками
             global Sobzak, Sobzak_
@@ -1280,30 +1309,21 @@ class ExampleApp(QtWidgets.QMainWindow):
 
             # Расстояние от края закрылка до земли при взлете
             global deltavzl, hvzl, deltapos
-            deltavzl = float(self.main.ed_deltavzl.text().replace(',', '.'))
-            deltapos = float(self.main.ed_deltapos.text().replace(',', '.'))
-            if deltavzl >= 90 or deltapos >= 90:
-                msg = QMessageBox()
-                msg.setIcon(QMessageBox.Critical)
-                msg.setText("Cлишком большой угол отклонения.")
-                msg.setWindowTitle("Ошибка")
-                msg.exec_()
-            else:
-                deltavzl = float(self.main.ed_deltavzl.text().replace(',', '.')) * math.pi / 180
-                hvzl = float('%.3f' % (h - math.sin(deltavzl) * bzak))  # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                self.main.ed_hvzl.setText(str(hvzl))
+            deltavzl = float(self.main.sb_deltavzl.text().replace(',', '.'))* math.pi / 180
+            deltapos = float(self.main.sb_deltapos.text().replace(',', '.')) * math.pi / 180
+            hvzl = float('%.3f' % (h - math.sin(deltavzl) * bzak_*b))  # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            self.main.ed_hvzl.setText(str(hvzl))
 
-                # Расстояние от края закрылка до земли при посадке
-                global hpos
-                deltapos = float(self.main.ed_deltapos.text().replace(',', '.')) * math.pi / 180
-                hpos = float('%.3f' % (h - math.sin(deltapos) * bzak))  # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                self.main.ed_hpos.setText(str(hpos))
+            # Расстояние от края закрылка до земли при посадке
+            global hpos
+            hpos = float('%.3f' % (h - math.sin(deltapos) * bzak_*b))  # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            self.main.ed_hpos.setText(str(hpos))
 
-                # Относ площадь крыла, обслуживаемая предкрылком
-                global Sobpr, Sobpr_
-                Sobpr = float(self.main.ed_Sobpr.text().replace(',', '.'))
-                Sobpr_ = float('%.3f' % (Sobpr / S))
-                self.main.ed_Sobpr_.setText(str(Sobpr_))
+            # Относ площадь крыла, обслуживаемая предкрылком
+            global Sobpr, Sobpr_
+            Sobpr = float(self.main.ed_Sobpr.text().replace(',', '.'))
+            Sobpr_ = float('%.3f' % (Sobpr / S))
+            self.main.ed_Sobpr_.setText(str(Sobpr_))
 
             permision_for_curve[1] = True
 
@@ -1334,8 +1354,7 @@ class ExampleApp(QtWidgets.QMainWindow):
 
             # Относительная толщина горизонт и вертикал оперения
             global cgo_, cvo_
-            cvo_ = cgo_ = float(
-                '%.3f' % (c_ - 0.01))  # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! у всех разное число отнимается
+            cvo_ = cgo_ = float('%.3f' % (c_ - 0.02))
             self.main.ed_cgo_.setText(str(cgo_))
             self.main.ed_cvo_.setText(str(cvo_))
 
@@ -1564,7 +1583,7 @@ class ExampleApp(QtWidgets.QMainWindow):
         global linear_size, c_lamda_el_for_cxa, Sk_el_for_cxa, n_el_for_cxa
         linear_size = [b, bgo, bvo, bp, lf, lgd, lgsh, 0]  # фонарь!=0
         c_lamda_el_for_cxa = [c_, cgo_, cvo_, cp_, lamdaf, lamdagd, lamdagsh, 0]
-        Sk_el_for_cxa = [S, Sgo, Svo, Sp, Ssm * 0.5, Ssm_gd * 0.5, Ssm_gsh * 0.5, 0]
+        Sk_el_for_cxa = [S, Sgo, Svo, Sp, Ssm * 0.5, Ssm_gd * 0.5, Ssm_gsh * 0.5, Smf]
         n_el_for_cxa = [1, ngo, nvo, npylon, 1, ngd, ngsh, nlight]
 
         # Расчет координат вспомогательной прямой
@@ -1727,7 +1746,7 @@ class ExampleApp(QtWidgets.QMainWindow):
 
         arr_intr_X = [px3, px, px5, px6]
         arr_intr_Y = [cya_py3, py, py5, py6]
-        tck, u = interpolate.splprep([arr_intr_X, arr_intr_Y], k=2, s=0)
+        tck, u = interpolate.splprep([arr_intr_X, arr_intr_Y], s=0)
         xnew, ynew = interpolate.splev(np.linspace(0, 1, 100), tck, der=0)
         ax.plot(arr_intr_X, arr_intr_Y, ' ', xnew, ynew, color='k')
 
@@ -1878,7 +1897,7 @@ class ExampleApp(QtWidgets.QMainWindow):
 
         # 2) С учетом влияния экрана земли
         # Приращение КПС, вызванный экранным влиянияем земли
-        dCyamax_zak_vzl_scrin = float('%.3f' % (-1 * 0.115 * math.exp(-0.5 * h / bsrzak) * Cyamax_vzl))
+        dCyamax_zak_vzl_scrin = float('%.3f' % (-1 * 0.115 * math.exp(-0.5 * hvzl / bsrzak) * Cyamax_vzl))
 
         # КПС, вызванный экранным влиянияем земли
         global Cyamax_vzl_scrin, lamdaef_scrin
@@ -1890,10 +1909,10 @@ class ExampleApp(QtWidgets.QMainWindow):
         # Производная с учетом влияния экрана земли
         expression = (2 * math.pi * lamdaef_scrin * math.cos(x_degree * math.pi / 180)) / (
                 57.3 * (lamdaef_scrin + 2 * math.cos(x_degree * math.pi / 180)))
-        caya_scrin = float('%.3f' % expression)
 
         # Точка
-        cya_s = float('%.3f' % (caya_scrin * (5 - a0_vzl)))
+        cya_s = float('%.3f' % (expression * (5 - a0_vzl)))
+        caya_scrin = float('%.3f' % expression)
         k_s = cya_s / (5 - a0_vzl)
         b_s = (-1) * k_s * a0_vzl
         px3_max_s = float('%.3f' % ((Cyamax_vzl_scrin - b_s) / k_s))
@@ -1921,7 +1940,7 @@ class ExampleApp(QtWidgets.QMainWindow):
         arr_intr_Y_s = [py1_s, py2_s, py3_s]
 
         tck, u = interpolate.splprep([arr_intr_X_s, arr_intr_Y_s], k=2)
-        xnew_s, ynew_s = interpolate.splev(np.linspace(0, 1, 100), tck, der=0)
+        xnew_s, ynew_s = interpolate.splev(np.linspace(0, 1, 100), tck)
         ax.plot(arr_intr_X_s, arr_intr_Y_s, ' ', xnew_s, ynew_s, color='tab:blue')
 
         ax.plot(points_a_s, points_Cya_s, marker=' ', color='tab:blue')
@@ -2084,8 +2103,8 @@ class ExampleApp(QtWidgets.QMainWindow):
         arr_intr_X_s = [px1_s, px2_s, px3_s]
         arr_intr_Y_s = [py1_s, py2_s, py3_s]
 
-        tck, u = interpolate.splprep([arr_intr_X_s, arr_intr_Y_s], k=2)
-        xnew, ynew = interpolate.splev(np.linspace(0, 1, 100), tck, der=0)
+        tck, u = interpolate.splprep([arr_intr_X_s, arr_intr_Y_s], k=2, s=0)
+        xnew, ynew = interpolate.splev(np.linspace(0, 1, 100), tck)
         ax.plot(arr_intr_X_s, arr_intr_Y_s, ' ', xnew, ynew, color='tab:blue')
 
         ax.plot(points_a_s, points_Cya_s, marker=' ', color='tab:blue')
@@ -2125,7 +2144,7 @@ class ExampleApp(QtWidgets.QMainWindow):
         list_caya_szh = []
         list_cya = []
         for M in list_M:
-            caya_szh = caya / math.sqrt(1 - M ** 2)
+            caya_szh = caya / math.sqrt(1 - M * M)
             list_caya_szh.append(float('%.3f' % caya_szh))
 
             cya = caya_szh * (5 - a0)
@@ -2192,6 +2211,7 @@ class ExampleApp(QtWidgets.QMainWindow):
     # ВСПОМОГАТЕЛЬНАЯ ПОЛЯРА
     def MakeHelpPolyr(self):
         self.main.tabPolyr.setCurrentIndex(0)
+        self.iconbutton(self.main.buHelpPolyr, self.button_polar)
         print('ВСПОМОГАТЕЛЬНАЯ ПОЛЯРА')
 
         # РАСЧЕТ КОЭФФИЦИЕНТА ПРОФИЛЬНОГО СОПРОТИВЛЕНИЯ
@@ -2199,6 +2219,7 @@ class ExampleApp(QtWidgets.QMainWindow):
         # print('Vmin_pol = ' + str(Vmin_pol))
         M = Vmin_pol/340.294 # ЧЕ ЗА КОНСТАНТА ???????????
         delta = self.call_delta(lamdaef, n)
+        print('delta = '+ str(delta))
 
         print('Кинт = ' + str(Kint))
         print('cxk = ' + str(cxk_light))
@@ -2228,12 +2249,13 @@ class ExampleApp(QtWidgets.QMainWindow):
                 # коэф сопротивления плоской пластине
                 cf_el_for_cxa.append(self.find_2cf(xtau_el_for_cxa[index], Re_el))
                 # коэф nМ
-                nm_el_for_cxa.append(1)  #    ВСТАВИТЬ ФУНКЦИЮ
                 # коэф nc
                 if index < 4:
                     nc_el_for_cxa.append(self.find_nc_wing(xtau_el_for_cxa[index], c_lamda_el_for_cxa[index]))
+                    nm_el_for_cxa.append(self.call_nM_wing(c_lamda_el_for_cxa[index],M))
                 else:
                     nc_el_for_cxa.append(self.find_nc_body_rotate(c_lamda_el_for_cxa[index]))
+                    nm_el_for_cxa.append(self.call_nM_body_rotation(c_lamda_el_for_cxa[index], M))
                 # коэф nинт
                 if index != 0:
                     nint_el_for_cxa.append(1)
@@ -2247,6 +2269,7 @@ class ExampleApp(QtWidgets.QMainWindow):
                 nint_el_for_cxa.append(0)
                 cxk_el_for_cxa.append(0)
 
+        cxk_el_for_cxa[-1]=cxk_light
         global S_proiz, cxo
         for el in Sk_el_for_cxa:
             i = Sk_el_for_cxa.index(el)
@@ -2326,7 +2349,7 @@ class ExampleApp(QtWidgets.QMainWindow):
         table_coordinats.add_row(Cxi_list)
         table_coordinats.add_row(Cxa_list)
 
-        # print(table_coordinats)
+        print(table_coordinats)
 
         self.main.la_Vminpol.setText(str(Vmin_pol))
         self.main.la_M_Vmin.setText(str(float('%.3f' % M)))
@@ -2352,12 +2375,13 @@ class ExampleApp(QtWidgets.QMainWindow):
 
     # ВЗЛЕТНАЯ ПОЛЯРА
     def MakeUpPolyr(self):
-        # print(dCxomax)
-        # print(self.find_dCxo_zak(bzak_, deltavzl))
-        # print(deltavzl)
-        self.main.tabPolyr.setCurrentIndex(1)
         print()
         print("ВЗЛЕТНАЯ ПОЛЯРА ")
+        print(dCxomax)
+        print(self.find_dCxo_zak(bzak_, deltavzl))
+        print(deltavzl)
+        self.main.tabPolyr.setCurrentIndex(1)
+        self.iconbutton(self.main.buUpPolyr, self.button_polar)
 
         # 1) без учета влияния экрана земли
         delta = self.call_delta(lamdaef, n)
@@ -2368,8 +2392,8 @@ class ExampleApp(QtWidgets.QMainWindow):
 
 
         cxo_vzl =  cxo + 0.5*cxo + 10 * self.find_dCxo_zak(bzak_, deltavzl) * Sobzak_ * dCxomax
-        print('cxo_vzl = '+ str(float('%.3f' % cxo_vzl)))
-        Vvzl = math.sqrt((2*Gvzl*g)/(0.8 * p_zero * S * Cyamax_vzl)) #!!!!! почему с экраном ?
+        print('cxo_vzl = '+ str(float('%.5f' % cxo_vzl)))
+        Vvzl = math.sqrt((2*Gvzl*g)/(0.8 * p_zero * S * Cyamax_vzl_scrin)) #!!!!! почему с экраном ?
         print('V_vzl = '+ str(float('%.3f' % Vvzl)))
         Mvzl = Vvzl/340.294 # CONST
         print('Mvzl = '+ str(float('%.3f' % Mvzl)))
@@ -2393,9 +2417,9 @@ class ExampleApp(QtWidgets.QMainWindow):
         table_coordinats.add_row(dCxp_list_up)
         table_coordinats.add_row(Cxi_list_up)
         table_coordinats.add_row(Cxa_list_up)
-        # print(table_coordinats)
+        print(table_coordinats)
 
-        # 1) c учетом влияния экрана земли
+        # 2) c учетом влияния экрана земли
         delta = self.call_delta(lamdaef_scrin, n)
         cya__list_up_scrin = []
         dCxp_list_up_scrin = []
@@ -2426,7 +2450,7 @@ class ExampleApp(QtWidgets.QMainWindow):
         table_coordinats_scrin.add_row(dCxp_list_up_scrin)
         table_coordinats_scrin.add_row(Cxi_list_up_scrin)
         table_coordinats_scrin.add_row(Cxa_list_up_scrin)
-        # print(table_coordinats_scrin)
+        print(table_coordinats_scrin)
 
         # отрисовка
         self.fP_Up.clear()  # отчистка графика
@@ -2464,8 +2488,10 @@ class ExampleApp(QtWidgets.QMainWindow):
         # print(self.find_dCxo_zak(bzak_, deltavzl))
         # print(deltavzl)
         self.main.tabPolyr.setCurrentIndex(2)
+        self.iconbutton(self.main.buDownPolyr, self.button_polar)
         print()
         print("ПОСАДОЧНАЯ ПОЛЯРА ")
+        print(self.find_dCxo_zak(bzak_, deltapos))
 
         # 1) без учета влияния экрана земли
         delta = self.call_delta(lamdaef, n)
@@ -2476,8 +2502,11 @@ class ExampleApp(QtWidgets.QMainWindow):
 
 
         cxo_down =  cxo + 0.5*cxo + 10 * self.find_dCxo_zak(bzak_, deltapos) * Sobzak_ * dCxomax #!!!!!!!!!!!!!!!
+        print('cxo = '+str(cxo))
+        print('Dcxo_zak_pos = '+str(10 * self.find_dCxo_zak(bzak_, deltapos) * Sobzak_ * dCxomax))
+
         print('cxo_down = '+ str(float('%.3f' % cxo_down)))
-        Vdown = math.sqrt((2*Gpol*g)/(0.8 * p_zero * S * Cya_max_pos)) #!!!!! почему с экраном ?
+        Vdown = math.sqrt((2*Gpol*g)/(0.8 * p_zero * S * Cya_max_pos_scrin)) #!!!!! почему с экраном ?
         print('V_down = '+ str(float('%.3f' % Vdown)))
         Mdown = Vdown/340.294 # CONST
         print('Mdown = '+ str(float('%.3f' % Mdown)))
@@ -2501,7 +2530,7 @@ class ExampleApp(QtWidgets.QMainWindow):
         table_coordinats.add_row(dCxp_list_down)
         table_coordinats.add_row(Cxi_list_down)
         table_coordinats.add_row(Cxa_list_down)
-        # print(table_coordinats)
+        print(table_coordinats)
 
         # 1) c учетом влияния экрана земли
         delta = self.call_delta(lamdaef_down_scrin, n)
@@ -2534,7 +2563,7 @@ class ExampleApp(QtWidgets.QMainWindow):
         table_coordinats_scrin.add_row(dCxp_list_down_scrin)
         table_coordinats_scrin.add_row(Cxi_list_down_scrin)
         table_coordinats_scrin.add_row(Cxa_list_down_scrin)
-        # print(table_coordinats_scrin)
+        print(table_coordinats_scrin)
 
         # отрисовка
         self.fP_Down.clear()  # отчистка графика
@@ -2570,12 +2599,13 @@ class ExampleApp(QtWidgets.QMainWindow):
     # КРЕЙСЕРСКИЕ ПОЛЯРЫ
     def MakeCruisePolyr(self):
         self.main.tabPolyr.setCurrentIndex(3)
+        self.iconbutton(self.main.buCrePolyr, self.button_polar)
         self.fP_Cre.clear()  # отчистка графика
         ax = self.fP_Cre.add_subplot()
 
         list_M = self.func_type(type)
         list_M.pop(0)
-        print(list_M)
+        # print(list_M)
         list_Re = []
         list_Xak=[]
         list_2cf=[]
@@ -2598,13 +2628,13 @@ class ExampleApp(QtWidgets.QMainWindow):
                     el_c_lamda= list_lamdan[index]
                     xt = xtau_el_for_cxa[index]
                     if M == 0:
-                        Re = (Vmin*el)/vH
+                        Re = (Vmin*el)/(vH * math.pow(10,6))
                     else:
-                        Re = (M * aH * el)/vH
+                        Re = (M * aH * el)/(vH* math.pow(10,6))
                     list_Re.append(float('%.3f' % Re))
                     list_2cf.append(self.find_2cf(xt, Re))
                     if index < 4:
-                        list_nM.append(self.call_nM_wing(el_c_lamda, M))
+                        list_nM.append(self.call_nM_wing(el_c_lamda*100, M))
                     else:
                         list_nM.append(self.call_nM_body_rotation(el_c_lamda, M))
                     Xak = list_2cf[index] * S_proiz[index] * list_nM[index]
@@ -2645,6 +2675,19 @@ class ExampleApp(QtWidgets.QMainWindow):
         list_cxvo = []
         list_cxvi = []
         delta = self.call_delta(lamdaef, n)
+        print(delta)
+
+        l_M0=[]
+        l_M7=[]
+        l_M8=[]
+        l_M85=[]
+        l_M9=[]
+        l_M95=[]
+
+        l_M4 = []
+        l_M5 = []
+        l_M6 = []
+        list_cxa_POL =[]
 
         for cya in list_cya:
             Mkr = list_Mkr[list_cya.index(cya)]
@@ -2673,11 +2716,35 @@ class ExampleApp(QtWidgets.QMainWindow):
                     # КЛС
                     cxa = list_cxo_cruise[i] + list_cxi[i]+list_cxvo[i]+list_cxvi[i]
                     list_cxa.append(float('%.5f' % cxa))
+                    #СДЕЛАНО ПО ТУПОМУ!!!!!!!!!!!!!!
+                    if M==0:
+                        l_M0.append(cxa)
+                    elif M==0.7:
+                        l_M7.append(cxa)
+                    elif M==0.8:
+                        l_M8.append(cxa)
+                    elif M==0.85:
+                        l_M85.append(cxa)
+                    elif M==0.9:
+                        l_M9.append(cxa)
+                    elif M==0.95:
+                        l_M95.append(cxa)
                 else:
                     # КЛС
                     cxa = list_cxo_cruise[i] + list_cxi[i]
                     list_cxa.append(float('%.5f' % cxa))
+                    if M == 0:
+                        l_M0.append(cxa)
+                    elif M == 0.4:
+                        l_M4.append(cxa)
+                    elif M == 0.5:
+                        l_M5.append(cxa)
+                    elif M == 0.6:
+                        l_M6.append(cxa)
+                    elif M == 0.7:
+                        l_M7.append(cxa)
             if type == 'ТРД':
+                list_cxa_POL = [l_M0, l_M7, l_M8, l_M85, l_M9, l_M95]
                 t = PrettyTable()
                 t.add_column("M", list_M)
                 t.add_column("cxo",list_cxo_cruise)
@@ -2690,6 +2757,7 @@ class ExampleApp(QtWidgets.QMainWindow):
                 print('Mkr = ' + str(Mkr))
                 print(t)
             else:
+                list_cxa_POL = [l_M0, l_M4, l_M5, l_M6, l_M7]
                 t = PrettyTable()
                 t.add_column("M",list_M)
                 t.add_column("cxo",list_cxo_cruise)
@@ -2699,26 +2767,33 @@ class ExampleApp(QtWidgets.QMainWindow):
                 print('cya = ' + str(cya))
                 print(t)
 
-            # отрисовка
-            # print(list_cxa)
-            # y = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7]
-            # tck, u = interpolate.splprep([list_cya, y], s=0, k=2)
-            # xnew, ynew = interpolate.splev(np.linspace(0, 1, 50), tck)
-            # ax.plot(list_cya, y, '.', xnew, ynew, color='tab:blue')
+        # отрисовка
+        # print(list_cxa)
+        for l in list_cxa_POL:
+            tck, u = interpolate.splprep([l, list_cya], s=0, k=2)
+            xnew, ynew = interpolate.splev(np.linspace(0, 1, 100), tck)
+            ax.plot(l, list_cya, '.', xnew, ynew, color='tab:blue')
 
         # index = 0
         # for i, j in zip(Cxa_list_up_scrin, cya_list_up_scrin):
         #     ax.annotate(str(a_list_up_scrin[index]), xy=(i, j))
         #     index += 1
 
-        # ax.spines["top"].set_visible(False)
-        # ax.spines["right"].set_visible(False)
-        # ax.set_ylabel('$\it{Cya}$', loc='top', rotation=0)
-        # ax.set_xlabel('$\it{Cxa}$', loc='right', fontsize=11)
-        # self.fP_Cre.tight_layout()
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
+        ax.set_ylabel('$\it{Cya}$', loc='top', rotation=0)
+        ax.set_xlabel('$\it{Cxa}$', loc='right', fontsize=11)
+        self.fP_Cre.tight_layout()
 
+        print('ПОЛЕТНЫЕ ПОЛЯРЫ')
         list_H=[0, 3000, 6000, 9000, 12000]
         list_cya_pol = []
+        l_H0=[]
+        l_H3=[]
+        l_H6=[]
+        l_H9=[]
+        l_H12=[]
+
         # print(list_M)
         # print(H)
         # ph_rash = pH
@@ -2737,17 +2812,40 @@ class ExampleApp(QtWidgets.QMainWindow):
                         cya = (2 * Gpol * g) / (pH * S * aH*aH*Mmin_rash*Mmin_rash)
                     list_cya_pol.append(float('%.4f' % cya))
 
+                l_H = self.Pol_Polar(list_cxa_POL, list_cya_pol)
+                tck, u = interpolate.splprep([l_H, list_cya_pol], s=0, k=2)
+                xnew, ynew = interpolate.splev(np.linspace(0, 1, 100), tck)
+                ax.plot(l_H, list_cya_pol, '.', xnew, ynew, color='tab:blue')
+
                 t = PrettyTable(list_M)
                 t.add_row(list_cya_pol)
                 print()
                 print('H = ' + str(H_))
                 print(t)
 
+
+
         self.cP_Cre.draw()
 
 
-
-
+    def Pol_Polar(self, list_cxa_POL, list_cya_pol):
+        list_cya = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7]
+        l_H=[]
+        index = -1
+        for l in list_cxa_POL:
+            tck, u = interpolate.splprep([l, list_cya], s=0, k=2)
+            xnew, ynew = interpolate.splev(np.linspace(0, 1, 100), tck)
+            min = 1000
+            index += 1
+            cxa_point = 0
+            for x in xnew:
+                if ynew[np.where(xnew == x)] - list_cya_pol[index] < min and ynew[np.where(xnew == x)] - list_cya_pol[index] > 0:
+                    min = ynew[np.where(xnew == x)] - list_cya_pol[index]
+                    cxa_point = x
+                if list_cya_pol[index] > 0.7:
+                    cxa_point = l[-1]
+            l_H.append(cxa_point)
+        return l_H
 
 
 if __name__ == '__main__':  # Если мы запускаем файл напрямую, а не импортируем
