@@ -2,6 +2,7 @@ import sqlite3
 import PyQt5
 import sys  # sys нужен для передачи argv в QApplication
 import matplotlib.patches
+import openpyxl
 from PyQt5 import QtWidgets, QtCore, QtGui
 from PyQt5.QtGui import QCursor
 from PyQt5.QtWidgets import QVBoxLayout, QTableWidgetItem, QHBoxLayout, QGridLayout, QLabel, QMessageBox
@@ -18,6 +19,8 @@ from scipy import interpolate
 from UI_Choose import Ui_Form
 from UI_dialog import Ui_Dialog
 from prettytable import PrettyTable
+import getpass
+from openpyxl.drawing.image import Image
 
 # GLOBAL
 # Wing
@@ -148,6 +151,7 @@ v_zero = 1.4607 * math.pow(10, -5)  # коэф кинематической вя
 
 # ВЫСЧИТАННЫЕ
 Mrasch = 0  # число Маха расчетное
+cya_rasch = 0 # расчетный КПС
 Gpol = 0  # полетный вес самолета
 Cyamax = 0
 da0_vzl = 0
@@ -420,6 +424,7 @@ class ExampleApp(QtWidgets.QMainWindow):
         self.main.buShowAirPlan.clicked.connect(self.OpenPlan)
         self.main.buFlapChoose.clicked.connect(self.OpenFlapChoose)
         self.main.buCre.clicked.connect(self.pressedPolyr)
+        self.main.buExport.clicked.connect(self.ExportData)
 
 
         # вторая вкладка
@@ -1338,6 +1343,8 @@ class ExampleApp(QtWidgets.QMainWindow):
         if permision_for_curve[0] and permision_for_curve[1] and permision_for_curve[2]:
             self.main.tabData.setTabEnabled(1, True)
 
+
+
     # РАСЧЕТ ГОРИЗОНТ И ВЕРТИКАЛ ОПЕРЕНИЯ
     def CalculateTail(self):
 
@@ -1644,7 +1651,7 @@ class ExampleApp(QtWidgets.QMainWindow):
         self.main.tableWidget_Mkr.setItem(1, 0, item2)
 
         # Расчет точки ?????
-        global Gpol, Mrasch
+        global Gpol, Mrasch, cya_rasch
         Vms = float('%.3f' % (V / 3.6))  # км/ч в м/с
         Mrasch = float('%.4f' % (Vms / aH))  # определение расчетного числа маха
         Gpol = Gvzl - 0.5 * Gm
@@ -1678,7 +1685,9 @@ class ExampleApp(QtWidgets.QMainWindow):
 
         self.figure.tight_layout()
         self.canvas.draw()
+        self.figure.savefig('graphics/Mkr.png')
 
+        self.ExportData()
 
     # ПОСТРОЕНИЕ ВСПОМОГАТЕЛЬНОЙ КРИВОЙ cya = f(a)
     def MakeHelp(self):
@@ -1764,6 +1773,7 @@ class ExampleApp(QtWidgets.QMainWindow):
 
         self.fhelp.tight_layout()
         self.chelp.draw()
+        self.fhelp.savefig('graphics/Help.png')
 
         # Отображение в окне
         self.main.la_1_help.setText(str(a0) + '; ' + str(0))
@@ -1777,6 +1787,27 @@ class ExampleApp(QtWidgets.QMainWindow):
         self.main.la_Cyamaxprof_help.setText(str(Cyamaxprof))
         self.main.la_Kn_help.setText(str(Kn))
 
+        wb = openpyxl.load_workbook('Расчет самолета.xlsx')
+        # заполнение второго листа с данными
+        st = wb['Кривые']
+        st.cell(27,2).value = Cyamax
+        st.cell(28,2).value = Cyamaxprof
+        st.cell(29,2).value = Re
+        st.cell(30,2).value = Kn
+        st.cell(31,2).value = Vmin
+
+        st.cell(27,8).value = a0
+        st.cell(28,8).value = alfa_px2
+        st.cell(29,8).value = px3
+        st.cell(30,8).value = px4
+        st.cell(31,8).value = px5
+        st.cell(27, 9).value = 0
+        st.cell(28, 9).value = cya_py2
+        st.cell(29, 9).value = cya_py3
+        st.cell(30, 9).value = Cyamax
+        st.cell(31, 9).value = Cyamax
+
+        wb.save('Расчет самолета.xlsx')
 
         # x=np.array( [px3,px5])
         # y = np.array([cya_py3, Cyamax])
@@ -1789,6 +1820,7 @@ class ExampleApp(QtWidgets.QMainWindow):
 
 
     # ПОИСК КОЭФФИЦИЕНТА ОТ ТИПА ЗАКРЫЛОК
+
     def find_zak(self, Flap_type):
         global dCyamax, dCxomax
         Sql_request = 'SELECT * FROM Закрылки WHERE Тип_механизации = %s' % '"' + Flap_type + '"'
@@ -1953,6 +1985,7 @@ class ExampleApp(QtWidgets.QMainWindow):
         ax.set_xlabel('$\it{α, °}$', loc='right', fontsize=11)
         self.fUp.tight_layout()
         self.cUp.draw()
+        self.fUp.savefig('graphics/Up.png')
 
         # заполнение списков для взлетной кривой
         global a_list_up_scrin, cya_list_up_scrin
@@ -1968,6 +2001,55 @@ class ExampleApp(QtWidgets.QMainWindow):
             a += 3
         a_list_up_scrin.append(px2_s)
         cya_list_up_scrin.append(Cyamax_vzl_scrin)
+
+        wb = openpyxl.load_workbook('Расчет самолета.xlsx')
+        # заполнение второго листа с данными
+        st = wb['Кривые']
+        # без экрана
+        st.cell(52, 2).value = dCyamax
+        st.cell(53, 2).value = da0_vzl
+        st.cell(55, 3).value = dCyamax_pr
+        st.cell(56, 3).value = dCyamax_zak_vzl
+        st.cell(57, 3).value = Cyamax_vzl
+        st.cell(58, 3).value = a0_vzl
+
+        l_a = points_a.copy()
+        l_a.append(px2)
+        l_cya = points_Cya.copy()
+        l_cya.append(Cyamax_vzl)
+        for col in range(8, 10):
+            i = 0
+            for row in range(55, 59):
+                cell = st.cell(row, col)
+                if col == 8:
+                    cell.value = l_a[i]
+                else:
+                    cell.value = l_cya[i]
+                i += 1
+
+        # с экраном
+        st.cell(62, 3).value = hvzl / bsrzak
+        st.cell(63, 3).value = caya_scrin
+        st.cell(64, 3).value = lamdaef_scrin
+        st.cell(66, 3).value = dCyamax_zak_vzl_scrin
+        st.cell(67, 3).value = Cyamax_vzl_scrin
+        st.cell(68, 3).value = a0_vzl
+
+        l_as = points_a_s.copy()
+        l_as.append(px2_s)
+        l_cyas = points_Cya_s.copy()
+        l_cyas.append(Cyamax_vzl_scrin)
+        for col in range(8, 10):
+            i = 0
+            for row in range(66, 70):
+                cell = st.cell(row, col)
+                if col == 8:
+                    cell.value = l_as[i]
+                else:
+                    cell.value = l_cyas[i]
+                i += 1
+
+        wb.save('Расчет самолета.xlsx')
 
     # ПОСТРОЕНИЕ ПОСАДОЧНЫХ КРИВЫХ (С УЧЕТОМ И БЕЗ УЧЕТА ВЛИЯНИЯ ЭКРАНА ЗЕМЛИ)
     def MakeDown(self):
@@ -2110,6 +2192,7 @@ class ExampleApp(QtWidgets.QMainWindow):
         ax.plot(points_a_s, points_Cya_s, marker=' ', color='tab:blue')
         ax.plot(px2_s, Cya_max_pos_scrin, marker='.', color='k')
         self.cDown.draw()
+        self.fDown.savefig('graphics/Down.png')
 
         # заполнение списков для взлетной кривой
         global a_list_down_scrin, cya_list_down_scrin
@@ -2125,6 +2208,53 @@ class ExampleApp(QtWidgets.QMainWindow):
             a += 3
         a_list_down_scrin.append(px2_s)
         cya_list_down_scrin.append(Cya_max_pos_scrin)
+
+        wb = openpyxl.load_workbook('Расчет самолета.xlsx')
+        # заполнение второго листа с данными
+        st = wb['Кривые']
+        # без экрана
+        st.cell(102, 2).value = da0_pos
+        st.cell(106, 3).value = dCya_max_zak_pos
+        st.cell(107, 3).value = Cya_max_pos
+        st.cell(108, 3).value = a0_pos
+
+        l_a = points_a.copy()
+        l_a.append(px2)
+        l_cya = points_Cya.copy()
+        l_cya.append(Cya_max_pos)
+        for col in range(8, 10):
+            i = 0
+            for row in range(105, 109):
+                cell = st.cell(row, col)
+                if col == 8:
+                    cell.value = l_a[i]
+                else:
+                    cell.value = l_cya[i]
+                i += 1
+
+        # с экраном
+        st.cell(112, 3).value = h_pos
+        st.cell(113, 3).value = caya_scrin
+        st.cell(114, 3).value = lamdaef_down_scrin
+        st.cell(116, 3).value = dCya_max_zak_pos_scrin
+        st.cell(117, 3).value = Cya_max_pos_scrin
+        st.cell(118, 3).value = a0_pos
+
+        l_as = points_a_s.copy()
+        l_as.append(px2_s)
+        l_cyas = points_Cya_s.copy()
+        l_cyas.append(Cya_max_pos_scrin)
+        for col in range(8, 10):
+            i = 0
+            for row in range(116, 120):
+                cell = st.cell(row, col)
+                if col == 8:
+                    cell.value = l_as[i]
+                else:
+                    cell.value = l_cyas[i]
+                i += 1
+
+        wb.save('Расчет самолета.xlsx')
 
     # Выбор чисел Маха от типа двигателя
     def func_type(self, type):
@@ -2207,6 +2337,58 @@ class ExampleApp(QtWidgets.QMainWindow):
         self.main.tabData.setTabEnabled(2, True)
         #self.MakeHelpPolyr()
         self.cCruise.draw()
+        self.fCruise.savefig('graphics/Cre.png')
+
+        wb = openpyxl.load_workbook('Расчет самолета.xlsx')
+        # заполнение второго листа с данными
+        st = wb['Кривые']
+        st.cell(151, 2).value = Mrasch
+        if type =='ТРД':
+            for row in range(155, 157):
+                i=0
+                for col in range(2, 9):
+                    cell = st.cell(row, col)
+                    if row ==155:
+                        cell.value = list_caya_szh[i]
+                    else:
+                        cell.value = list_cya[i]
+                    i+=1
+        else:
+            st.cell(154,8).value = None
+            for col in range(4,8):
+                st.cell(154, col).value = list_M[col-2]
+            for row in range(155, 157):
+                i=0
+                for col in range(2, 8):
+                    cell = st.cell(row, col)
+                    if row ==155:
+                        cell.value = list_caya_szh[i]
+                    else:
+                        cell.value = list_cya[i]
+                    i+=1
+
+        img = Image('graphics/Mkr.png')
+        img.height = 256
+        img.width = 468
+        st.add_image(img, 'C10')
+        img_1 = Image('graphics/Help.png')
+        img_1.height = 256
+        img_1.width = 468
+        st.add_image(img_1, 'C34')
+        img_2 = Image('graphics/Up.png')
+        img_2.height = 322
+        img_2.width = 537
+        st.add_image(img_2, 'B72')
+        img_3 = Image('graphics/Down.png')
+        img_3.height = 322
+        img_3.width = 537
+        st.add_image(img_3, 'B122')
+        img_4 = Image('graphics/Cre.png')
+        img_4.height = 283
+        img_4.width = 537
+        st.add_image(img_4, 'B158')
+
+        wb.save('Расчет самолета.xlsx')
 
     # ВСПОМОГАТЕЛЬНАЯ ПОЛЯРА
     def MakeHelpPolyr(self):
@@ -2350,10 +2532,8 @@ class ExampleApp(QtWidgets.QMainWindow):
         table_coordinats.add_row(Cxa_list)
 
         print(table_coordinats)
-
         self.main.la_Vminpol.setText(str(Vmin_pol))
         self.main.la_M_Vmin.setText(str(float('%.3f' % M)))
-
 
         index=0
         for i, j in zip(Cxa_list, cya_list_help):
@@ -2370,8 +2550,43 @@ class ExampleApp(QtWidgets.QMainWindow):
         ax.set_xlabel('$\it{Cxa}$', loc='right', fontsize=11)
         self.fP_Help.tight_layout()
         self.cP_Help.draw()
+        self.fP_Help.savefig('graphics/P_help.png')
 
-        #self.MakeUpPolyr()
+        wb = openpyxl.load_workbook('Расчет самолета.xlsx')
+        # заполнение второго листа с данными
+        st = wb['Поляры']
+        st.cell(18, 2).value = cxo
+        st.cell(20, 2).value = Vmin_pol
+        st.cell(21, 2).value = M
+        st.cell(20, 6).value = delta
+
+
+        if type == 'ТРД':
+            for col in range(2, 10):
+                st.cell(4, col).value = linear_size[col - 2]
+                st.cell(5, col).value = Re_el_for_cxa[col - 2]
+                st.cell(6, col).value = xtau_el_for_cxa[col - 2]
+                st.cell(7, col).value = cf_el_for_cxa[col - 2]
+                st.cell(8, col).value = c_lamda_el_for_cxa[col - 2]
+                st.cell(9, col).value = nc_el_for_cxa[col - 2]
+                st.cell(10, col).value = nm_el_for_cxa[col - 2]
+                st.cell(11, col).value = nint_el_for_cxa[col - 2]
+                st.cell(12, col).value = cxk_el_for_cxa[col - 2]
+                st.cell(13, col).value = Sk_el_for_cxa[col - 2]
+                st.cell(14, col).value = n_el_for_cxa[col - 2]
+                st.cell(15, col).value = chislitel_el_for_cxa[col - 2]
+            for col in range(2, len(a_list_help)+2):
+                st.cell(24, col).value = a_list_help[col - 2]
+                st.cell(25, col).value = cya_list_help[col - 2]
+                st.cell(26, col).value = cya__list[col - 2]
+                st.cell(27, col).value = dCxp_list[col - 2]
+                st.cell(28, col).value = Cxi_list[col - 2]
+                st.cell(29, col).value = Cxa_list[col - 2]
+        else:
+            print()
+
+        self.ExportImage(wb['Кривые'], wb['Поляры'])
+        wb.save('Расчет самолета.xlsx')
 
     # ВЗЛЕТНАЯ ПОЛЯРА
     def MakeUpPolyr(self):
@@ -2846,6 +3061,64 @@ class ExampleApp(QtWidgets.QMainWindow):
                     cxa_point = l[-1]
             l_H.append(cxa_point)
         return l_H
+
+    def ExportData(self):
+        wb = openpyxl.load_workbook('Шаблон ТРД.xlsx')
+        # заполнение первого листа с данными
+        st_1 = wb['Данные']
+        data = [l, S, b, b0, bk, n, c_, xc_, f_, a0, xf_, x_degree, xc_degree, lamda, Sf_,
+                Sgd_, Sgsh_, S_, lamdaef, caya, xtau_, cmo, h, bzak_, lzak, Sobzak_, deltavzl,
+                deltapos, xshzak, bsrzak, Sobpr_, bgo, cgo_, lgo, Sgo, lamdago, xgo, bv, Sv, ngo,
+                bvo, lvo, Svo, cvo_, nvo, bp, cp_, Sp, npylon, lf, Df, Smf, lamdaf, Ssm, lnf,
+                lamdanf, lgd, Dgd, lamdagd, Ssm_gd, ln_gd, lamdan_gd, ngd, lgsh, Dgsh, lamdagsh,
+                Ssm_gsh, ln_gsh, lamdan_gsh, ngsh, Dv, Fv, Gvzl, V, type, number, P0, H]
+        i = 0
+        for row in range(1, 82):
+            cell = st_1.cell(row, 4)
+            if row == 1 or row == 32 or row == 73:
+                continue
+            else:
+                cell.value=data[i]
+                i +=1
+        # заполнение второго листа с кривыми
+        st_2 = wb['Кривые']
+        for col in range(2, 10):
+            cell = st_2.cell(5, col)
+            cell.value = list_Mkr[col-2]
+
+        st_2.cell(7, 2).value = Mrasch
+        st_2.cell(8, 2).value = cya_rasch
+        st_2.cell(9, 2).value = Gpol
+
+        wb.save('Расчет самолета.xlsx')
+        # wb.save('/home/'+getpass.getuser())
+
+    def ExportImage(self, st, st_2):
+
+        img = Image('graphics/Mkr.png')
+        img.height = 256
+        img.width = 468
+        st.add_image(img, 'C10')
+        img_1 = Image('graphics/Help.png')
+        img_1.height = 256
+        img_1.width = 468
+        st.add_image(img_1, 'C34')
+        img_2 = Image('graphics/Up.png')
+        img_2.height = 322
+        img_2.width = 537
+        st.add_image(img_2, 'B72')
+        img_3 = Image('graphics/Down.png')
+        img_3.height = 322
+        img_3.width = 537
+        st.add_image(img_3, 'B122')
+        img_4 = Image('graphics/Cre.png')
+        img_4.height = 283
+        img_4.width = 537
+        st.add_image(img_4, 'B158')
+        img_5 = Image('graphics/P_help.png')
+        img_5.height = 283
+        img_5.width = 537
+        st_2.add_image(img_5, 'B31')
 
 
 if __name__ == '__main__':  # Если мы запускаем файл напрямую, а не импортируем
