@@ -176,6 +176,8 @@ a_list_help=[]
 cya_list_help=[]
 cxo=0
 xtau_el_for_cxa = []
+nc_for_cre =[]
+nint_for_cre =[]
 
 # взлетная поляра
 a_list_up=[]
@@ -1343,8 +1345,6 @@ class ExampleApp(QtWidgets.QMainWindow):
         if permision_for_curve[0] and permision_for_curve[1] and permision_for_curve[2]:
             self.main.tabData.setTabEnabled(1, True)
 
-
-
     # РАСЧЕТ ГОРИЗОНТ И ВЕРТИКАЛ ОПЕРЕНИЯ
     def CalculateTail(self):
 
@@ -2367,27 +2367,6 @@ class ExampleApp(QtWidgets.QMainWindow):
                         cell.value = list_cya[i]
                     i+=1
 
-        img = Image('graphics/Mkr.png')
-        img.height = 256
-        img.width = 468
-        st.add_image(img, 'C10')
-        img_1 = Image('graphics/Help.png')
-        img_1.height = 256
-        img_1.width = 468
-        st.add_image(img_1, 'C34')
-        img_2 = Image('graphics/Up.png')
-        img_2.height = 322
-        img_2.width = 537
-        st.add_image(img_2, 'B72')
-        img_3 = Image('graphics/Down.png')
-        img_3.height = 322
-        img_3.width = 537
-        st.add_image(img_3, 'B122')
-        img_4 = Image('graphics/Cre.png')
-        img_4.height = 283
-        img_4.width = 537
-        st.add_image(img_4, 'B158')
-
         wb.save('Расчет самолета.xlsx')
 
     # ВСПОМОГАТЕЛЬНАЯ ПОЛЯРА
@@ -2485,7 +2464,9 @@ class ExampleApp(QtWidgets.QMainWindow):
         print(table)  # Печатаем таблицу
         print('cxo = ' + str(cxo))
 
-
+        global nc_for_cre, nint_for_cre
+        nc_for_cre = nc_el_for_cxa.copy()
+        nint_for_cre = nint_el_for_cxa.copy()
 
         # Приращение коэффициента профильного сопротивления
         cya__list = []
@@ -2560,7 +2541,6 @@ class ExampleApp(QtWidgets.QMainWindow):
         st.cell(21, 2).value = M
         st.cell(20, 6).value = delta
 
-
         if type == 'ТРД':
             for col in range(2, 10):
                 st.cell(4, col).value = linear_size[col - 2]
@@ -2584,8 +2564,6 @@ class ExampleApp(QtWidgets.QMainWindow):
                 st.cell(29, col).value = Cxa_list[col - 2]
         else:
             print()
-
-        self.ExportImage(wb['Кривые'], wb['Поляры'])
         wb.save('Расчет самолета.xlsx')
 
     # ВЗЛЕТНАЯ ПОЛЯРА
@@ -2821,6 +2799,7 @@ class ExampleApp(QtWidgets.QMainWindow):
         list_M = self.func_type(type)
         list_M.pop(0)
         # print(list_M)
+
         list_Re = []
         list_Xak=[]
         list_2cf=[]
@@ -2831,14 +2810,27 @@ class ExampleApp(QtWidgets.QMainWindow):
         list_lamdan[5]=lamdan_gd
         list_lamdan[6]=lamdan_gsh
 
+        wb = openpyxl.load_workbook('Расчет самолета.xlsx')
+        st = wb['Поляры']
+        arr = [linear_size, list_lamdan, xtau_el_for_cxa, nc_for_cre, nint_for_cre, Sk_el_for_cxa,n_el_for_cxa, S_proiz]
+        i = 0
+        for row in range(141, 149):
+            for col in range(2, 10):
+                list_row = arr[i]
+                st.cell(row, col).value = list_row[col-2]
+            i +=1
+
         print ('КРЕЙСЕРСКИЕ ПОЛЯРЫ')
+        row = 148
         for M in list_M:
             list_Re.clear()
             list_Xak.clear()
             list_2cf.clear()
             list_nM.clear()
+            i=0
             for el in linear_size:
                 if el != 0:
+                    Re = 0
                     index = linear_size.index(el)
                     el_c_lamda= list_lamdan[index]
                     xt = xtau_el_for_cxa[index]
@@ -2859,19 +2851,32 @@ class ExampleApp(QtWidgets.QMainWindow):
                     list_Re.append(0)
                     list_2cf.append(0)
                     list_nM.append(0)
-
-            t = PrettyTable(['Крыло', "Гор оперение", "Вер оперение", "Пилон", "Фюзеляж", "ГД", "ГШ", "Фонарь"])
-            t.add_row(list_Re)
-            t.add_row(list_2cf)
-            t.add_row(list_nM)
-            t.add_row(list_Xak)
-            print()
-            print('M = '+ str(M))
-            print(t)
+            # t = PrettyTable(['Крыло', "Гор оперение", "Вер оперение", "Пилон", "Фюзеляж", "ГД", "ГШ", "Фонарь"])
+            # t.add_row(list_Re)
+            # t.add_row(list_2cf)
+            # t.add_row(list_nM)
+            # t.add_row(list_Xak)
+            # print()
+            # print('M = '+ str(M))
+            # print(t)
+            row += 2
+            if row == 150:
+                st.cell(row, 5).value = Vmin
+            else:
+                st.cell(row, 5).value = float('%.4f' % (M * aH))
+            row += 2
+            arr = [list_Re, list_2cf, list_nM, list_Xak]
+            for r in range(row, row+4):
+                for col in range(2, 10):
+                    list_row = arr[i]
+                    st.cell(r, col).value = list_row[col - 2]
+                i += 1
 
             cxo_cruise = float('%.5f' % (sum(list_Xak) * 1.04 / S))
             list_cxo_cruise.append(cxo_cruise)
-            print('cxo = ' + str(cxo_cruise))
+            row +=4
+            st.cell(row, 2).value = cxo_cruise
+            # print('cxo = ' + str(cxo_cruise))
 
             cos = math.cos(xc_degree)
 
@@ -2879,9 +2884,10 @@ class ExampleApp(QtWidgets.QMainWindow):
         Mc_xvo_max = math.pow(cos,-1) * (1 + 0.4 * (math.pow(c_, 3/2) / math.pow(cos, 2/3)) *
                                                              (2 - lamdaef*math.pow(c_*cos*cos, 1/3)))
         cxvo_max = (2 * math.pi * lamdaef * c_ * c_ * cos) / (2 + lamdaef * math.pow(c_, 1/3) * math.pow(cos, 5/3))
-        print('M max = ' + str(float('%.3f' % Mc_xvo_max)))
-        print('C max = ' + str(float('%.3f' % cxvo_max)))
-
+        # print('M max = ' + str(float('%.3f' % Mc_xvo_max)))
+        # print('C max = ' + str(float('%.3f' % cxvo_max)))
+        st.cell(200, 3).value = Mc_xvo_max
+        st.cell(201, 3).value = cxvo_max
 
         # расчет координат поляр
         list_cya = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7]
@@ -2889,6 +2895,7 @@ class ExampleApp(QtWidgets.QMainWindow):
         list_cxa = []
         list_cxvo = []
         list_cxvi = []
+        list_Am=[]
         delta = self.call_delta(lamdaef, n)
         print(delta)
 
@@ -2904,28 +2911,32 @@ class ExampleApp(QtWidgets.QMainWindow):
         l_M6 = []
         list_cxa_POL =[]
 
+        row = 201
         for cya in list_cya:
             Mkr = list_Mkr[list_cya.index(cya)]
             list_cxi.clear()
             list_cxa.clear()
             list_cxvo.clear()
             list_cxvi.clear()
+            list_Am.clear()
+            q=0
             for M in list_M:
                 i = list_M.index(M)
                 # коэффициент вихревого сопротивления
                 cxi = math.pow(cya, 2)/(math.pi*lamdaef) * (1+delta)/math.sqrt(1-M*M)
                 list_cxi.append(float('%.5f' % cxi))
-
                 if type == 'ТРД':
                     if M > Mkr:
                         # составляющая коэф волнового сопротивления, не зависящая от cya
                         Am = (M - Mkr) / (Mc_xvo_max - Mkr)
+                        list_Am.append(float('%.5f' % Am))
                         cxvo = cxvo_max * math.pow(Am, 3) * (4 - 3 * Am)
                         list_cxvo.append(float('%.5f' % cxvo))
                         # коэф волнового сопротивления
                         cxvi = 25 * lamdaef * math.pow(c_, 1 / 3) * math.pow(M - Mkr, 3) * cxi
                         list_cxvi.append(float('%.5f' % cxvi))
                     else:
+                        list_Am.append(0)
                         list_cxvo.append(0)
                         list_cxvi.append(0)
                     # КЛС
@@ -2960,17 +2971,29 @@ class ExampleApp(QtWidgets.QMainWindow):
                         l_M7.append(cxa)
             if type == 'ТРД':
                 list_cxa_POL = [l_M0, l_M7, l_M8, l_M85, l_M9, l_M95]
-                t = PrettyTable()
-                t.add_column("M", list_M)
-                t.add_column("cxo",list_cxo_cruise)
-                t.add_column( "cxi", list_cxi)
-                t.add_column('cxvo', list_cxvo)
-                t.add_column('cxvi', list_cxvi)
-                t.add_column("cxa", list_cxa)
-                print()
-                print('cya = ' + str(cya))
-                print('Mkr = ' + str(Mkr))
-                print(t)
+                # t = PrettyTable()
+                # t.add_column("M", list_M)
+                # t.add_column("cxo",list_cxo_cruise)
+                # t.add_column( "cxi", list_cxi)
+                # t.add_column('cxvo', list_cxvo)
+                # t.add_column('cxvi', list_cxvi)
+                # t.add_column("cxa", list_cxa)
+                # print()
+                # print('cya = ' + str(cya))
+                # print('Mkr = ' + str(Mkr))
+                # print(t)
+                row += 3
+                st.cell(row, 2).value = Mkr
+                arr = [list_cxo_cruise, list_cxi, list_Am, list_cxvo, list_cxvi, list_cxa]
+                for col in range(4, 10):
+                    p=0
+                    for r in range(row, row + 6):
+                        list_col = arr[q]
+                        st.cell(r, col).value = list_col[p]
+                        p+=1
+                    q += 1
+                row +=5
+
             else:
                 list_cxa_POL = [l_M0, l_M4, l_M5, l_M6, l_M7]
                 t = PrettyTable()
@@ -3015,6 +3038,7 @@ class ExampleApp(QtWidgets.QMainWindow):
         # ah_rash = aH
         Vmin_rash = math.sqrt((2*Gpol*g)/(0.85*pH*S*Cyamax))
         Mmin_rash = Vmin_rash / aH
+        row = 272
         if type == "ТРД":
             for H_ in list_H:
                 self.find_with_H(H_)
@@ -3027,20 +3051,36 @@ class ExampleApp(QtWidgets.QMainWindow):
                         cya = (2 * Gpol * g) / (pH * S * aH*aH*Mmin_rash*Mmin_rash)
                     list_cya_pol.append(float('%.4f' % cya))
 
+                row +=3
+                st.cell(row, 2).value = pH
+                st.cell(row+1, 2).value = aH
+                row += 3
+                i = 0
+                for col in range(1, 7):
+                    cell = st.cell(row, col)
+                    cell.value = list_cya_pol[i]
+                    i += 1
+
                 l_H = self.Pol_Polar(list_cxa_POL, list_cya_pol)
                 tck, u = interpolate.splprep([l_H, list_cya_pol], s=0, k=2)
                 xnew, ynew = interpolate.splev(np.linspace(0, 1, 100), tck)
                 ax.plot(l_H, list_cya_pol, '.', xnew, ynew, color='tab:blue')
 
-                t = PrettyTable(list_M)
-                t.add_row(list_cya_pol)
-                print()
-                print('H = ' + str(H_))
-                print(t)
+                # t = PrettyTable(list_M)
+                # t.add_row(list_cya_pol)
+                # print()
+                # print('H = ' + str(H_))
+                # print(t)
+                # заполнение второго листа с данными
 
 
 
+                # self.ExportImage(wb['Кривые'], wb['Поляры'])
+
+        wb.save('Расчет самолета.xlsx')
         self.cP_Cre.draw()
+        self.fP_Cre.savefig('graphics/P_Cre.png')
+
 
 
     def Pol_Polar(self, list_cxa_POL, list_cya_pol):
@@ -3119,6 +3159,11 @@ class ExampleApp(QtWidgets.QMainWindow):
         img_5.height = 283
         img_5.width = 537
         st_2.add_image(img_5, 'B31')
+
+        img_8 = Image('graphics/P_Cre.png')
+        img_8.height = 283
+        img_8.width = 537
+        st_2.add_image(img_8, 'B304')
 
 
 if __name__ == '__main__':  # Если мы запускаем файл напрямую, а не импортируем
