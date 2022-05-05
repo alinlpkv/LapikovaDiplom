@@ -8,7 +8,6 @@ from PyQt5.QtGui import QCursor
 from PyQt5.QtWidgets import QVBoxLayout, QTableWidgetItem, QHBoxLayout, QGridLayout, QLabel, QMessageBox
 # from matplotlib.backends.backend_template import FigureCanvas
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-
 from UI import Ui_MainWindow  # Это наш конвертированный файл дизайна
 import math
 from matplotlib.backends.backend_qt5agg import (NavigationToolbar2QT as NavigationToolbar)
@@ -426,8 +425,6 @@ class ExampleApp(QtWidgets.QMainWindow):
         self.main.buFlapChoose.clicked.connect(self.OpenFlapChoose)
         self.main.buCre.clicked.connect(self.pressedPolyr)
         self.main.buExport.clicked.connect(self.pressedExport)
-        self.main.buMkr.clicked.connect(self.pressedExport)
-
 
         # вторая вкладка
         self.main.tabWidget.setTabVisible(0, False)
@@ -1150,9 +1147,9 @@ class ExampleApp(QtWidgets.QMainWindow):
         self.main.tabData.setTabEnabled(2, True)
 
     def pressedExport(self):
-        print()
-        # my_dir = QtGui.       QFileDialog.getExistingDirectory(self, "Select Directory")
-        # self.ExportImage(wb['Кривые'], wb['Поляры'])
+        file_name = QtWidgets.QFileDialog.getSaveFileName(self, 'Сохранение файла', '', filter='*.xlsx')
+        if file_name:
+            self.ExportImage(str(file_name[0]))
 
     def OpenPlan(self):
         dlg = DialogPlan(self)
@@ -3208,8 +3205,10 @@ class ExampleApp(QtWidgets.QMainWindow):
         wb.save('Расчет самолета.xlsx')
         # wb.save('/home/'+getpass.getuser())
 
-    def ExportImage(self, st, st_2):
-
+    def ExportImage(self, file_info):
+        wb = openpyxl.load_workbook('Расчет самолета.xlsx')
+        st = wb['Кривые']
+        st_2 = wb['Поляры']
         img = Image('graphics/Mkr.png')
         img.height = 256
         img.width = 468
@@ -3246,6 +3245,8 @@ class ExampleApp(QtWidgets.QMainWindow):
         img_8.height = 283
         img_8.width = 537
         st_2.add_image(img_8, 'B304')
+
+        wb.save(file_info)
 
 
 if __name__ == '__main__':  # Если мы запускаем файл напрямую, а не импортируем
