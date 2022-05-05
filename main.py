@@ -10,7 +10,6 @@ from PyQt5.QtWidgets import QVBoxLayout, QTableWidgetItem, QHBoxLayout, QGridLay
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 
 from UI import Ui_MainWindow  # Это наш конвертированный файл дизайна
-# pyuic5 UI.ui -o UI.py
 import math
 from matplotlib.backends.backend_qt5agg import (NavigationToolbar2QT as NavigationToolbar)
 import matplotlib.pyplot as plt
@@ -19,8 +18,8 @@ from scipy import interpolate
 from UI_Choose import Ui_Form
 from UI_dialog import Ui_Dialog
 from prettytable import PrettyTable
-import getpass
 from openpyxl.drawing.image import Image
+from os.path import expanduser
 
 # GLOBAL
 # Wing
@@ -426,7 +425,8 @@ class ExampleApp(QtWidgets.QMainWindow):
         self.main.buShowAirPlan.clicked.connect(self.OpenPlan)
         self.main.buFlapChoose.clicked.connect(self.OpenFlapChoose)
         self.main.buCre.clicked.connect(self.pressedPolyr)
-        self.main.buExport.clicked.connect(self.ExportData)
+        self.main.buExport.clicked.connect(self.pressedExport)
+        self.main.buMkr.clicked.connect(self.pressedExport)
 
 
         # вторая вкладка
@@ -1149,6 +1149,11 @@ class ExampleApp(QtWidgets.QMainWindow):
     def pressedPolyr(self):
         self.main.tabData.setTabEnabled(2, True)
 
+    def pressedExport(self):
+        print()
+        # my_dir = QtGui.       QFileDialog.getExistingDirectory(self, "Select Directory")
+        # self.ExportImage(wb['Кривые'], wb['Поляры'])
+
     def OpenPlan(self):
         dlg = DialogPlan(self)
         dlg.show()
@@ -1829,6 +1834,16 @@ class ExampleApp(QtWidgets.QMainWindow):
         dCyamax = float(cur[2])
         dCxomax = float(cur[3])
 
+    def cal_system_x(self, x1, y1, x2, y2, y):
+        k = (y1 - y2) / (x1 - x2)
+        b_koef = y1 - k * x1
+        return float('%.5f' % ((y-b_koef)/k))
+
+    def cal_k_b_koef(self, x1, y1, x2, y2):
+        k_koef = (y1 - y2) / (x1 - x2)
+        b_koef = y1 - k_koef * x1
+        return [k_koef, b_koef]
+
     # ПОСТРОЕНИЕ ВЗЛЕТНОЙ КРИВОЙ (С УЧЕТОМ И БЕЗ УЧЕТА ВЛИЯНИЯ ЭКРАНА ЗЕМЛИ)
     def MakeUp(self):
         self.main.tabWidget.setCurrentIndex(2)
@@ -1836,18 +1851,13 @@ class ExampleApp(QtWidgets.QMainWindow):
         self.iconbutton(self.main.buUp, self.button_curve)
 
         # 1) Без учета влияния экрана земли
-
         # Определение переменных по графикам da0_vzl
         self.find_zak(Flap_type)
         da0_vzl = self.call_da0(deltavzl)  # определение приращения угла атаки нулевой подъемной силы в радианах
-
         # Преращение коэф подъем силы от выпуска предкрылков
         dCyamax_pr = 0.6 * Sobpr_
 
         # Преращение коэф подъем силы от выпуска закрылков
-        # Sobzak_ = 0.459
-        # da0_vzl = -0.16
-
         dCyamax_zak_vzl = float('%.3f' % (
                 4.83 * dCyamax * Sobzak_ * abs(da0_vzl) * math.cos(xshzak * math.pi / 180) * math.cos(
             xshzak * math.pi / 180)))
@@ -1861,17 +1871,46 @@ class ExampleApp(QtWidgets.QMainWindow):
             dCya_obd = 0
             da0_obd = 0
 
-
         # Максимальный коэф подъемной силы при взлете
         global Cyamax_vzl
         Cyamax_vzl = float('%.3f' % (Cyamax + dCyamax_pr + dCyamax_zak_vzl+dCya_obd)) #+dCya_obd
         a0_vzl = float('%.3f' % (a0 + (da0_vzl+da0_obd) * 180 / math.pi))  # +da0_obd
 
-        # Точка
-        cya = float('%.3f' % (caya * (5 - a0_vzl)))
-        k = cya / (5 - a0_vzl)
-        b = (-1) * k * a0_vzl
-        px3_max = float('%.3f' % ((Cyamax_vzl - b) / k))
+        # Точки
+        a1 = a0_vzl
+        cya1 = 0
+
+        a2 = 5
+        cya2 = float('%.3f' % (caya * (5 - a0_vzl)))
+
+        cya3 = 0.85*Cyamax_vzl
+        a3 = self.cal_system_x(a1, cya1, a2, cya2, cya3)
+
+        a4 = self.cal_system_x(a1, cya1, a2, cya2, Cyamax_vzl)
+        cya4 = Cyamax_vzl
+
+        amax = float('%.3f' % (a4+2))
+
+        # Отрисовка
+        self.fUp.clear()
+        ax = self.fUp.add_subplot(111)
+        # Прямая
+        points_a = [a1, a2, a3]
+        points_Cya = [cya1, cya2, cya3]
+        # Вспомогательные точки для дуги
+        px = (a3 + a4) / 2
+        py = (cya3 + cya4) / 2
+        px2 = 2 * amax - a3
+        py2 = cya3
+        arr_intr_X = [a3, px, amax, px2]
+        arr_intr_Y = [cya3, py, Cyamax_vzl, py2]
+
+        tck, u = interpolate.splprep([arr_intr_X, arr_intr_Y], s=0)
+        xnew, ynew = interpolate.splev(np.linspace(0, 1, 100), tck)
+        ax.plot(arr_intr_X, arr_intr_Y, ' ', xnew, ynew, color='k')
+
+        ax.plot(points_a, points_Cya, marker='.', color='k')
+        ax.plot(amax, Cyamax_vzl, marker='o', color='r')
 
         # Отображение найденных переменных
         self.main.la_dCyamaxpr_Up.setText(str(dCyamax_pr))
@@ -1884,33 +1923,7 @@ class ExampleApp(QtWidgets.QMainWindow):
         self.main.la_da0obd_Up.setText(str(da0_obd))  # найти переменную с винтами
         self.main.la_a0_Up.setText(str(a0))
         self.main.la_a0vzl_Up.setText(str(a0_vzl))
-        self.main.la_Cya_Up.setText(str(cya))
-
-        # Отрисовка
-        self.fUp.clear()
-        ax = self.fUp.add_subplot(111)
-
-        # Вспомогательные точки
-        px1 = (5 + 8 * (px3_max - 5) / 10)
-        py1 = k * px1 + b
-
-        px2 = px3_max + 2
-        py2 = Cyamax_vzl
-
-        px3 = 2 * px2 - px1
-        py3 = py1
-
-        points_a = [a0_vzl, 5, px1]
-        points_Cya = [0, cya, py1]
-        arr_intr_X = [px1, px2, px3]
-        arr_intr_Y = [py1, py2, py3]
-
-        tck, u = interpolate.splprep([arr_intr_X, arr_intr_Y], k=2)
-        xnew, ynew = interpolate.splev(np.linspace(0, 1, 100), tck, der=0)
-        ax.plot(arr_intr_X, arr_intr_Y, ' ', xnew, ynew, color='k')
-
-        ax.plot(points_a, points_Cya, marker=' ', color='k')
-        ax.plot(px2, Cyamax_vzl, marker='.', color='purple')
+        self.main.la_Cya_Up.setText(str(cya2))
 
         # заполнение списков для взлетной кривой
         global a_list_up, cya_list_up
@@ -1918,13 +1931,14 @@ class ExampleApp(QtWidgets.QMainWindow):
         cya_list_up.clear()
         a_list_up.append(a0_vzl)
         cya_list_up.append(0)
-        a = 1  # !!!!!
-        while px2 - a > 3:
-            angle = round(a0_vzl+a)
-            a_list_up.append(angle)
-            cya_list_up.append(float('%.3f' % (k * angle + b)))
-            a += 3
-        a_list_up.append(px2)
+        angle = int((abs(a0_vzl)+abs(amax))/6)
+        koef = self.cal_k_b_koef(a1, cya1, a2, cya2)
+        a = a0_vzl
+        for i in range(6):
+            a = float('%.0f' % (angle+a))
+            a_list_up.append(a)
+            cya_list_up.append(float('%.3f' % (koef[0] * a + koef[1])))
+        a_list_up.append(amax)
         cya_list_up.append(Cyamax_vzl)
 
         # 2) С учетом влияния экрана земли
@@ -1941,42 +1955,37 @@ class ExampleApp(QtWidgets.QMainWindow):
         # Производная с учетом влияния экрана земли
         expression = (2 * math.pi * lamdaef_scrin * math.cos(x_degree * math.pi / 180)) / (
                 57.3 * (lamdaef_scrin + 2 * math.cos(x_degree * math.pi / 180)))
-
-        # Точка
-        cya_s = float('%.3f' % (expression * (5 - a0_vzl)))
         caya_scrin = float('%.3f' % expression)
-        k_s = cya_s / (5 - a0_vzl)
-        b_s = (-1) * k_s * a0_vzl
-        px3_max_s = float('%.3f' % ((Cyamax_vzl_scrin - b_s) / k_s))
 
-        # Отображение найденных переменных
-        self.main.la_dCyamaxvzl_scrin_Up.setText(str(dCyamax_zak_vzl_scrin))
-        self.main.la_Cyamaxvzl_scrin_Up.setText(str(Cyamax_vzl_scrin))
-        self.main.la_Caya_scrin_Up.setText(str(caya_scrin))
-        self.main.la_lamda_scrin_Up.setText(str(lamdaef_scrin))
-        self.main.la_Cya_scrin_Up.setText(str(cya_s))
+        # Точки
+        cya2_s = float('%.3f' % (expression * (5 - a0_vzl)))
+
+        cya3_s = 0.85 * Cyamax_vzl_scrin
+        a3_s = self.cal_system_x(a1, cya1, a2, cya2_s, cya3_s)
+
+        a4_s = self.cal_system_x(a1, cya1, a2, cya2_s, Cyamax_vzl_scrin)
+        cya4_s = Cyamax_vzl_scrin
+
+        amax_s = float('%.3f' % (a4_s + 2))
+
+        # Прямая
+        points_a_s = [a1, a2, a3_s]
+        points_Cya_s = [cya1, cya2_s, cya3_s]
+        # Вспомогательные точки для дуги
+        px = (a3_s + a4_s) / 2
+        py = (cya3_s + cya4_s) / 2
+        px2 = 2 * amax_s - a3_s
+        py2 = cya3_s
+        arr_intr_X_s = [a3_s, px, amax_s, px2]
+        arr_intr_Y_s = [cya3_s, py, Cyamax_vzl_scrin, py2]
 
         # Отрисовка
-        px1_s = (5 + 8 * (px3_max_s - 5) / 10)
-        py1_s = k_s * px1_s + b_s
-
-        px2_s = px3_max_s + 2
-        py2_s = Cyamax_vzl_scrin
-
-        px3_s = 2 * px2_s - px1_s
-        py3_s = py1_s
-
-        points_a_s = [a0_vzl, 5, px1_s]
-        points_Cya_s = [0, cya_s, py1_s]
-        arr_intr_X_s = [px1_s, px2_s, px3_s]
-        arr_intr_Y_s = [py1_s, py2_s, py3_s]
-
-        tck, u = interpolate.splprep([arr_intr_X_s, arr_intr_Y_s], k=2)
+        tck, u = interpolate.splprep([arr_intr_X_s, arr_intr_Y_s], s=0)
         xnew_s, ynew_s = interpolate.splev(np.linspace(0, 1, 100), tck)
         ax.plot(arr_intr_X_s, arr_intr_Y_s, ' ', xnew_s, ynew_s, color='tab:blue')
 
-        ax.plot(points_a_s, points_Cya_s, marker=' ', color='tab:blue')
-        ax.plot(px2_s, Cyamax_vzl_scrin, marker='.', color='k')
+        ax.plot(points_a_s, points_Cya_s, marker='.', color='tab:blue')
+        ax.plot(amax_s, Cyamax_vzl_scrin, marker='.', color='k')
 
         #ax.set_title('Взлетные кривые Cya = f(a)', loc='right', pad=5, fontsize=11)
         ax.spines["top"].set_visible(False)
@@ -1987,19 +1996,27 @@ class ExampleApp(QtWidgets.QMainWindow):
         self.cUp.draw()
         self.fUp.savefig('graphics/Up.png')
 
+        # Отображение найденных переменных
+        self.main.la_dCyamaxvzl_scrin_Up.setText(str(dCyamax_zak_vzl_scrin))
+        self.main.la_Cyamaxvzl_scrin_Up.setText(str(Cyamax_vzl_scrin))
+        self.main.la_Caya_scrin_Up.setText(str(caya_scrin))
+        self.main.la_lamda_scrin_Up.setText(str(lamdaef_scrin))
+        self.main.la_Cya_scrin_Up.setText(str(cya2_s))
+
         # заполнение списков для взлетной кривой
         global a_list_up_scrin, cya_list_up_scrin
         a_list_up_scrin.clear()
         cya_list_up_scrin.clear()
         a_list_up_scrin.append(a0_vzl)
         cya_list_up_scrin.append(0)
-        a = 1  # !!!!!
-        while px2_s - a > 3:
-            angle = round(a0_vzl+a)
-            a_list_up_scrin.append(angle)
-            cya_list_up_scrin.append(float('%.3f' % (k * angle + b)))
-            a += 3
-        a_list_up_scrin.append(px2_s)
+        angle = int((abs(a0_vzl) + abs(amax_s)) / 6)
+        koef = self.cal_k_b_koef(a1, cya1, a2, cya2_s)
+        a = a0_vzl
+        for i in range(6):
+            a = float('%.0f' % (angle + a))
+            a_list_up_scrin.append(a)
+            cya_list_up_scrin.append(float('%.3f' % (koef[0] * a + koef[1])))
+        a_list_up_scrin.append(amax_s)
         cya_list_up_scrin.append(Cyamax_vzl_scrin)
 
         wb = openpyxl.load_workbook('Расчет самолета.xlsx')
@@ -2014,7 +2031,7 @@ class ExampleApp(QtWidgets.QMainWindow):
         st.cell(58, 3).value = a0_vzl
 
         l_a = points_a.copy()
-        l_a.append(px2)
+        l_a.append(amax)
         l_cya = points_Cya.copy()
         l_cya.append(Cyamax_vzl)
         for col in range(8, 10):
@@ -2036,7 +2053,7 @@ class ExampleApp(QtWidgets.QMainWindow):
         st.cell(68, 3).value = a0_vzl
 
         l_as = points_a_s.copy()
-        l_as.append(px2_s)
+        l_as.append(amax_s)
         l_cyas = points_Cya_s.copy()
         l_cyas.append(Cyamax_vzl_scrin)
         for col in range(8, 10):
@@ -2058,14 +2075,11 @@ class ExampleApp(QtWidgets.QMainWindow):
         self.iconbutton(self.main.buDown, self.button_curve)
 
         # 1) Без учета влияния экрана земли
-
         #    Определение переменных
         da0_pos = self.call_da0(deltapos)
         dCyamax_pr = 0.6 * Sobpr_  # преращение коэф подъем силы от выпуска предкрылков
 
         # Приращение КПС при выпущенных закрылках при посадке
-        # da0_pos = -0.195
-        # Sobzak_ = 0.459
         dCya_max_zak_pos = float(
             '%.3f' % (4.83 * dCyamax * Sobzak_ * abs(da0_pos) * (math.cos(xshzak * math.pi / 180) ** 2)))
 
@@ -2075,10 +2089,49 @@ class ExampleApp(QtWidgets.QMainWindow):
         a0_pos = float('%.3f' % (a0 + da0_pos * 180 / math.pi))
 
         # Точка
-        cya = float('%.3f' % (caya * (5 - a0_pos)))
-        k = cya / (5 - a0_pos)
-        b = -1 * k * a0_pos
-        px3_max = float('%.3f' % ((Cya_max_pos - b) / k))
+        # Точки
+        a1 = a0_pos
+        cya1 = 0
+
+        a2 = 5
+        cya2 = float('%.3f' % (caya * (5 - a0_pos)))
+
+        cya3 = 0.85 * Cya_max_pos
+        a3 = self.cal_system_x(a1, cya1, a2, cya2, cya3)
+
+        a4 = self.cal_system_x(a1, cya1, a2, cya2, Cya_max_pos)
+        cya4 = Cya_max_pos
+
+        amax = float('%.3f' % (a4 + 2))
+
+        # Прямая
+        points_a = [a1, a2, a3]
+        points_Cya = [cya1, cya2, cya3]
+        # Вспомогательные точки для дуги
+        px = (a3 + a4) / 2
+        py = (cya3 + cya4) / 2
+        px2 = 2 * amax - a3
+        py2 = cya3
+        arr_intr_X = [a3, px, amax, px2]
+        arr_intr_Y = [cya3, py, cya4, py2]
+
+        # Отрисовка
+        self.fDown.clear()  # отчистка графика
+        ax = self.fDown.add_subplot(111)
+
+        tck, u = interpolate.splprep([arr_intr_X, arr_intr_Y], k=2)
+        xnew, ynew = interpolate.splev(np.linspace(0, 1, 100), tck, der=0)
+        ax.plot(arr_intr_X, arr_intr_Y, ' ', xnew, ynew, color='k')
+
+        ax.plot(points_a, points_Cya, marker=' ', color='k')
+        ax.plot(amax, Cya_max_pos, marker='.', color='purple')
+
+        #ax.set_title('Посадочные кривые Cya = f(a)', loc='right', pad=5, fontsize=11)
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
+        ax.set_ylabel('$\it{Cya}$', loc='top', rotation=0)
+        ax.set_xlabel('$\it{α, °}$', loc='right', fontsize=11)
+        self.fDown.tight_layout()
 
         # Отображение найденных переменных
         self.main.la_dCyamaxpr_Down.setText(str(dCyamax_pr))
@@ -2089,57 +2142,24 @@ class ExampleApp(QtWidgets.QMainWindow):
         self.main.la_da0pos_Down.setText(str(da0_pos))
         self.main.la_a0_Down.setText(str(a0))
         self.main.la_a0pos_Down.setText(str(a0_pos))
-        self.main.la_Cya_Down.setText(str(cya))
-
-        # Отрисовка
-        self.fDown.clear()  # отчистка графика
-        ax = self.fDown.add_subplot(111)
-
-        px1 = (5 + 8 * (px3_max - 5) / 10)
-        py1 = k * px1 + b
-
-        px2 = px3_max + 2
-        py2 = Cya_max_pos
-
-        px3 = 2 * px2 - px1
-        py3 = py1
-
-        points_a = [a0_pos, 5, px1]
-        points_Cya = [0, cya, py1]
-        arr_intr_X = [px1, px2, px3]
-        arr_intr_Y = [py1, py2, py3]
-
-        tck, u = interpolate.splprep([arr_intr_X, arr_intr_Y], k=2)
-        xnew, ynew = interpolate.splev(np.linspace(0, 1, 100), tck, der=0)
-        ax.plot(arr_intr_X, arr_intr_Y, ' ', xnew, ynew, color='k')
-
-        ax.plot(points_a, points_Cya, marker=' ', color='k')
-        ax.plot(px2, Cya_max_pos, marker='.', color='purple')
-
-        #ax.set_title('Посадочные кривые Cya = f(a)', loc='right', pad=5, fontsize=11)
-        ax.spines["top"].set_visible(False)
-        ax.spines["right"].set_visible(False)
-        ax.set_ylabel('$\it{Cya}$', loc='top', rotation=0)
-        ax.set_xlabel('$\it{α, °}$', loc='right', fontsize=11)
-        self.fDown.tight_layout()
-
+        self.main.la_Cya_Down.setText(str(cya2))
         # заполнение списков для взлетной кривой
         global a_list_down, cya_list_down
         a_list_down.clear()
         cya_list_down.clear()
         a_list_down.append(a0_pos)
         cya_list_down.append(0)
-        a = 1  # !!!!!
-        while px2 - a > 3:
-            angle = round((a0_pos+a))
+        angle = int((abs(a0_pos) + abs(amax)) / 6)
+        koef = self.cal_k_b_koef(a1, cya1, a2, cya2)
+        a = a0_pos
+        for i in range(6):
+            a = float('%.0f' % (angle + a))
             a_list_down.append(a)
-            cya_list_down.append(float('%.3f' % (k * a + b)))
-            a += 3
-        a_list_down.append(px2)
+            cya_list_down.append(float('%.3f' % (koef[0] * a + koef[1])))
+        a_list_down.append(amax)
         cya_list_down.append(Cya_max_pos)
 
         # 2) C учетом влияния экрана земли
-
         #    определение переменных
         x = x_degree * math.pi / 180
         h_pos = hpos / bsrzak
@@ -2157,42 +2177,42 @@ class ExampleApp(QtWidgets.QMainWindow):
         Cya_max_pos_scrin = float('%.3f' % (Cya_max_pos + dCya_max_zak_pos_scrin))
         lamdaef_down_scrin=lamda_scrin
 
-        #   Точка
-        cya_scrin = float('%.3f' % (caya_scrin * (5 - a0_pos)))
-        k_s = cya_scrin / (5 - a0_pos)
-        b_s = -1 * k_s * a0_pos
-        px3_max_s = float('%.3f' % ((Cya_max_pos_scrin - b_s) / k_s))
+        # Точки
+        cya2_s = float('%.3f' % (caya_scrin * (5 - a0_pos)))
 
+        cya3_s = 0.85 * Cya_max_pos_scrin
+        a3_s = self.cal_system_x(a1, cya1, a2, cya2_s, cya3_s)
+
+        a4_s = self.cal_system_x(a1, cya1, a2, cya2_s, Cya_max_pos_scrin)
+        cya4_s = Cya_max_pos_scrin
+
+        amax_s = float('%.3f' % (a4_s + 2))
+
+        # Прямая
+        points_a_s = [a1, a2, a3_s]
+        points_Cya_s = [cya1, cya2_s, cya3_s]
+        # Вспомогательные точки для дуги
+        px = (a3_s + a4_s) / 2
+        py = (cya3_s + cya4_s) / 2
+        px2 = 2 * amax_s - a3_s
+        py2 = cya3_s
+        arr_intr_X_s = [a3_s, px, amax_s, px2]
+        arr_intr_Y_s = [cya3_s, py, Cya_max_pos_scrin, py2]
+
+        tck, u = interpolate.splprep([arr_intr_X_s, arr_intr_Y_s], s=0)
+        xnew, ynew = interpolate.splev(np.linspace(0, 1, 100), tck)
+        ax.plot(arr_intr_X_s, arr_intr_Y_s, ' ', xnew, ynew, color='tab:blue')
+
+        ax.plot(points_a_s, points_Cya_s, marker=' ', color='tab:blue')
+        ax.plot(amax_s, Cya_max_pos_scrin, marker='.', color='k')
+        self.cDown.draw()
+        self.fDown.savefig('graphics/Down.png')
         # Отображение найденных переменных
         self.main.la_dCyamaxpos_scrin_Down.setText(str(dCya_max_zak_pos_scrin))
         self.main.la_Cyamaxpos_scrin_Down.setText(str(Cya_max_pos_scrin))
         self.main.la_Caya_scrin_Down.setText(str(caya_scrin))
         self.main.la_lamda_scrin_Down.setText(str(lamda_scrin))
-        self.main.la_Cya_scrin_Down.setText(str(cya_scrin))
-
-        # Отрисовка
-        px1_s = (5 + 8 * (px3_max_s - 5) / 10)
-        py1_s = k_s * px1_s + b_s
-
-        px2_s = px3_max_s + 2
-        py2_s = Cya_max_pos_scrin
-
-        px3_s = 2 * px2_s - px1_s
-        py3_s = py1_s
-
-        points_a_s = [a0_pos, 5, px1_s]
-        points_Cya_s = [0, cya_scrin, py1_s]
-        arr_intr_X_s = [px1_s, px2_s, px3_s]
-        arr_intr_Y_s = [py1_s, py2_s, py3_s]
-
-        tck, u = interpolate.splprep([arr_intr_X_s, arr_intr_Y_s], k=2, s=0)
-        xnew, ynew = interpolate.splev(np.linspace(0, 1, 100), tck)
-        ax.plot(arr_intr_X_s, arr_intr_Y_s, ' ', xnew, ynew, color='tab:blue')
-
-        ax.plot(points_a_s, points_Cya_s, marker=' ', color='tab:blue')
-        ax.plot(px2_s, Cya_max_pos_scrin, marker='.', color='k')
-        self.cDown.draw()
-        self.fDown.savefig('graphics/Down.png')
+        self.main.la_Cya_scrin_Down.setText(str(cya2_s))
 
         # заполнение списков для взлетной кривой
         global a_list_down_scrin, cya_list_down_scrin
@@ -2200,13 +2220,14 @@ class ExampleApp(QtWidgets.QMainWindow):
         cya_list_down_scrin.clear()
         a_list_down_scrin.append(a0_pos)
         cya_list_down_scrin.append(0)
-        a = 1  # !!!!!
-        while px2_s - a > 3:
-            angle =round(a0_pos+a)
+        angle = int((abs(a0_pos) + abs(amax_s)) / 6)
+        koef = self.cal_k_b_koef(a1, cya1, a2, cya2_s)
+        a = a0_pos
+        for i in range(6):
+            a = float('%.0f' % (angle + a))
             a_list_down_scrin.append(a)
-            cya_list_down_scrin.append(float('%.3f' % (k * a + b)))
-            a += 3
-        a_list_down_scrin.append(px2_s)
+            cya_list_down_scrin.append(float('%.3f' % (koef[0] * a + koef[1])))
+        a_list_down_scrin.append(amax_s)
         cya_list_down_scrin.append(Cya_max_pos_scrin)
 
         wb = openpyxl.load_workbook('Расчет самолета.xlsx')
@@ -2219,7 +2240,7 @@ class ExampleApp(QtWidgets.QMainWindow):
         st.cell(108, 3).value = a0_pos
 
         l_a = points_a.copy()
-        l_a.append(px2)
+        l_a.append(amax)
         l_cya = points_Cya.copy()
         l_cya.append(Cya_max_pos)
         for col in range(8, 10):
@@ -2241,7 +2262,7 @@ class ExampleApp(QtWidgets.QMainWindow):
         st.cell(118, 3).value = a0_pos
 
         l_as = points_a_s.copy()
-        l_as.append(px2_s)
+        l_as.append(amax_s)
         l_cyas = points_Cya_s.copy()
         l_cyas.append(Cya_max_pos_scrin)
         for col in range(8, 10):
@@ -2650,7 +2671,7 @@ class ExampleApp(QtWidgets.QMainWindow):
         ax = self.fP_Up.add_subplot()
         # без экрана
         tck, u = interpolate.splprep([Cxa_list_up, cya_list_up], s=0)
-        xnew, ynew = interpolate.splev(np.linspace(0, 1, 50), tck)
+        xnew, ynew = interpolate.splev(np.linspace(0, 1, 100), tck)
         ax.plot(Cxa_list_up, cya_list_up, '.', xnew, ynew, color='k')
 
         index=0
@@ -2660,7 +2681,7 @@ class ExampleApp(QtWidgets.QMainWindow):
 
         # с экраном
         tck, u = interpolate.splprep([Cxa_list_up_scrin, cya_list_up_scrin], s=0)
-        xnew, ynew = interpolate.splev(np.linspace(0, 1, 50), tck)
+        xnew, ynew = interpolate.splev(np.linspace(0, 1, 100), tck)
         ax.plot(Cxa_list_up_scrin, cya_list_up_scrin, '.', xnew, ynew, color='tab:blue')
 
         index = 0
@@ -2674,6 +2695,36 @@ class ExampleApp(QtWidgets.QMainWindow):
         ax.set_xlabel('$\it{Cxa}$', loc='right', fontsize=11)
         self.fP_Up.tight_layout()
         self.cP_Up.draw()
+        self.fP_Up.savefig('graphics/P_Up.png')
+
+        wb = openpyxl.load_workbook('Расчет самолета.xlsx')
+        # заполнение второго листа с данными
+        st = wb['Поляры']
+        st.cell(48, 3).value = dCxomax
+        st.cell(49, 3).value = float('%.4f' % self.find_dCxo_zak(bzak_, deltavzl))
+        st.cell(50, 2).value = Mvzl
+        st.cell(51, 2).value = Vvzl
+        st.cell(48, 7).value = float('%.4f' % (0.5*cxo))
+        st.cell(49, 7).value = float('%.4f' % (10 * self.find_dCxo_zak(bzak_, deltavzl) * Sobzak_ * dCxomax))
+        st.cell(50, 7).value = cxo_vzl
+
+        for col in range(2, len(a_list_up) + 2):
+            st.cell(54, col).value = a_list_up[col - 2]
+            st.cell(55, col).value = cya_list_up[col - 2]
+            st.cell(56, col).value = cya__list_up[col - 2]
+            st.cell(57, col).value = dCxp_list_up[col - 2]
+            st.cell(58, col).value = Cxi_list_up[col - 2]
+            st.cell(59, col).value = Cxa_list_up[col - 2]
+
+        for col in range(2, len(a_list_up_scrin) + 2):
+            st.cell(64, col).value = a_list_up_scrin[col - 2]
+            st.cell(65, col).value = cya_list_up_scrin[col - 2]
+            st.cell(66, col).value = cya__list_up_scrin[col - 2]
+            st.cell(67, col).value = dCxp_list_up_scrin[col - 2]
+            st.cell(68, col).value = Cxi_list_up_scrin[col - 2]
+            st.cell(69, col).value = Cxa_list_up_scrin[col - 2]
+
+        wb.save('Расчет самолета.xlsx')
 
     # ПОСАДОЧНАЯ ПОЛЯРА
     def MakeDownPolyr(self):
@@ -2787,6 +2838,35 @@ class ExampleApp(QtWidgets.QMainWindow):
         ax.set_xlabel('$\it{Cxa}$', loc='right', fontsize=11)
         self.fP_Down.tight_layout()
         self.cP_Down.draw()
+        self.fP_Down.savefig('graphics/P_Down.png')
+
+        wb = openpyxl.load_workbook('Расчет самолета.xlsx')
+        # заполнение второго листа с данными
+        st = wb['Поляры']
+        st.cell(94, 3).value = float('%.4f' % self.find_dCxo_zak(bzak_, deltapos))
+        st.cell(95, 2).value = Mdown
+        st.cell(96, 2).value = Vdown
+        st.cell(94, 7).value = cxo
+        st.cell(95, 7).value = float('%.4f' % (10 * self.find_dCxo_zak(bzak_, deltapos) * Sobzak_ * dCxomax))
+        st.cell(96, 7).value = cxo_down
+
+
+        for col in range(2, len(a_list_down) + 2):
+            st.cell(100, col).value = a_list_down[col - 2]
+            st.cell(101, col).value = cya_list_down[col - 2]
+            st.cell(102, col).value = cya__list_down[col - 2]
+            st.cell(103, col).value = dCxp_list_down[col - 2]
+            st.cell(104, col).value = Cxi_list_down[col - 2]
+            st.cell(105, col).value = Cxa_list_down[col - 2]
+
+        for col in range(2, len(a_list_down_scrin) + 2):
+            st.cell(110, col).value = a_list_down_scrin[col - 2]
+            st.cell(111, col).value = cya_list_down_scrin[col - 2]
+            st.cell(112, col).value = cya__list_down_scrin[col - 2]
+            st.cell(113, col).value = dCxp_list_down_scrin[col - 2]
+            st.cell(114, col).value = Cxi_list_down_scrin[col - 2]
+            st.cell(115, col).value = Cxa_list_down_scrin[col - 2]
+        wb.save('Расчет самолета.xlsx')
 
 
     # КРЕЙСЕРСКИЕ ПОЛЯРЫ
@@ -3071,11 +3151,6 @@ class ExampleApp(QtWidgets.QMainWindow):
                 # print()
                 # print('H = ' + str(H_))
                 # print(t)
-                # заполнение второго листа с данными
-
-
-
-                # self.ExportImage(wb['Кривые'], wb['Поляры'])
 
         wb.save('Расчет самолета.xlsx')
         self.cP_Cre.draw()
@@ -3159,7 +3234,14 @@ class ExampleApp(QtWidgets.QMainWindow):
         img_5.height = 283
         img_5.width = 537
         st_2.add_image(img_5, 'B31')
-
+        img_5 = Image('graphics/P_Up.png')
+        img_5.height = 283
+        img_5.width = 537
+        st_2.add_image(img_5, 'B72')
+        img_5 = Image('graphics/P_Down.png')
+        img_5.height = 283
+        img_5.width = 537
+        st_2.add_image(img_5, 'B118')
         img_8 = Image('graphics/P_Cre.png')
         img_8.height = 283
         img_8.width = 537
