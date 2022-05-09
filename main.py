@@ -163,6 +163,8 @@ Vmin = 0
 # для интерфейса
 permision_for_curve = [False, False, False]
 permision_for_export = ['', '', '','']
+permissiom_for_polar=['', '', '', '', '']
+permission=['','']
 
 # для таблиц
 # вспомогательная поляра
@@ -198,6 +200,7 @@ lamdaef_down_scrin=0
 
 # крейсерская
 list_Mkr=[]
+list_K=[]
 
 # ДИАЛОГОВОЕ ОКНО С РАСЧЕТНЫМИ СХЕМАМИ
 class DialogPlan(QtWidgets.QDialog):
@@ -342,14 +345,13 @@ class ExampleApp(QtWidgets.QMainWindow):
         self.button_curve = [self.main.buMkr, self.main.buHelp, self.main.buUp, self.main.buDown, self.main.buCre]
         self.button_polar = [self.main.buHelpPolyr, self.main.buUpPolyr, self.main.buDownPolyr, self.main.buCrePolyr, self.main.buExport]
 
-        self.main.buExport.setIcon(QtGui.QIcon('x.svg'))
         self.main.buExport.setEnabled(False)
-
+        self.main.buHelp.setEnabled(False)
+        self.main.buUp.setEnabled(False)
+        self.main.buDown.setEnabled(False)
+        self.main.buCre.setEnabled(False)
+        self.main.buHelp.setIcon(QtGui.QIcon('images/x.svg'))
         self.main.groupBox_13.setVisible(False)
-        self.main.buHelp.setVisible(False)
-        self.main.buUp.setVisible(False)
-        self.main.buDown.setVisible(False)
-        self.main.buCre.setVisible(False)
         self.main.tabData.setTabEnabled(1, False)
         self.main.tabData.setTabEnabled(2, False)
 
@@ -449,6 +451,7 @@ class ExampleApp(QtWidgets.QMainWindow):
         self.main.buFlapChoose.clicked.connect(self.OpenFlapChoose)
         self.main.buCre.clicked.connect(self.pressedPolyr)
         self.main.buExport.clicked.connect(self.pressedExport)
+        self.main.buFindK.clicked.connect(self.pressedK)
 
         # вторая вкладка
         self.main.tabWidget.setTabVisible(0, False)
@@ -902,10 +905,10 @@ class ExampleApp(QtWidgets.QMainWindow):
 
     def iconbutton(self, bufill, buttons):
         for bu in buttons:
-            bu.setIcon(QtGui.QIcon('caret-right.svg'))
+            bu.setIcon(QtGui.QIcon('images/caret-right.svg'))
         if S == 0 and b == 0:
-            self.main.buFlapMulard.setIcon(QtGui.QIcon('x.svg'))
-        bufill.setIcon(QtGui.QIcon('caret-right-fill.svg'))
+            self.main.buFlapMulard.setIcon(QtGui.QIcon('images/x.svg'))
+        bufill.setIcon(QtGui.QIcon('images/caret-right-fill.svg'))
 
     # ОПРЕДЕЛЕНЕ КОЭФФИЦИЕНТА Кинт
     def request_Kint(self, type):
@@ -1191,7 +1194,6 @@ class ExampleApp(QtWidgets.QMainWindow):
         except:
             self.MakeCruisePolyr()
 
-
     def OpenPlan(self):
         dlg = DialogPlan(self)
         dlg.show()
@@ -1451,6 +1453,7 @@ class ExampleApp(QtWidgets.QMainWindow):
         if permision_for_curve[0] and permision_for_curve[1] and permision_for_curve[2]:
             self.main.tabData.setTabEnabled(1, True)
 
+
     # РАСЧЕТ ДАННЫХ ФЮЗЕЛЯЖА
     def CalculateFuselage(self):
 
@@ -1488,6 +1491,7 @@ class ExampleApp(QtWidgets.QMainWindow):
 
         if permision_for_curve[0] and permision_for_curve[1] and permision_for_curve[2]:
             self.main.tabData.setTabEnabled(1, True)
+
 
     # РАСЧЕТ ДАННЫХ ГОНДОЛ ДВИГАТЕЛЯ И ШАССИ
     def CalculateGondola(self):
@@ -1556,6 +1560,7 @@ class ExampleApp(QtWidgets.QMainWindow):
         if permision_for_curve[0] and permision_for_curve[1] and permision_for_curve[2]:
             self.main.tabData.setTabEnabled(1, True)
 
+
     # СОХРАНЕНИЕ ОБЩИХ ДАННЫХ
     def SafeCommonData(self):
 
@@ -1616,12 +1621,24 @@ class ExampleApp(QtWidgets.QMainWindow):
 
         if permision_for_curve[0] and permision_for_curve[1] and permision_for_curve[2]:
             self.main.tabData.setTabEnabled(1, True)
+            self.MakeMkr()
+
 
     # РАСЧЕТ И ПОСТРОЕНИЕ КРИВОЙ ЗАВИСИМОСТИ Мкр
     def MakeMkr(self):
-        self.main.tabWidget.setCurrentIndex(0)
-        self.main.buHelp.setVisible(True)
+        global permission
+        permission[0]='+'
+        permissiom_for_polar[0]='+'
         self.iconbutton(self.main.buMkr, self.button_curve)
+        self.main.buCre.setEnabled(True)
+        for p in permission:
+            if p=='':
+                self.main.buUp.setEnabled(False)
+                self.main.buUp.setIcon(QtGui.QIcon('images/x.svg'))
+                self.main.buDown.setEnabled(False)
+                self.main.buDown.setIcon(QtGui.QIcon('images/x.svg'))
+        self.main.buHelp.setEnabled(True)
+        self.main.tabWidget.setCurrentIndex(0)
 
         # ЗАПОЛНЕНИЕ МАССИВОВ ДАННЫМИ
         global linear_size, c_lamda_el_for_cxa, Sk_el_for_cxa, n_el_for_cxa
@@ -1658,17 +1675,6 @@ class ExampleApp(QtWidgets.QMainWindow):
 
         # Отображение в приложении
         SQLquery = 'SELECT * FROM "Кривая зависимость Мкр"'
-
-        # tablerow = 0
-        # self.main.tableWidget_Mkr.setRowCount(8)
-        # self.main.tableWidget_Mkr.setColumnCount(2)
-        # for row in self.cursor.execute(SQLquery):
-        #     for col in range(2):
-        #         item = QtWidgets.QTableWidgetItem(str(row[col]))
-        #         item.setTextAlignment(QtCore.Qt.AlignCenter)
-        #         item.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
-        #         self.main.tableWidget_Mkr.setItem(tablerow, col, item)
-        #     tablerow = tablerow + 1
 
         tablecol = 1
         self.main.tableWidget_Mkr.setRowCount(2)
@@ -1726,9 +1732,15 @@ class ExampleApp(QtWidgets.QMainWindow):
         except PermissionError:
             self.ErrorMessage()
 
+
     # ПОСТРОЕНИЕ ВСПОМОГАТЕЛЬНОЙ КРИВОЙ cya = f(a)
     def MakeHelp(self):
-        self.main.buUp.setVisible(True)
+        global permission
+        permission[1]="+"
+        self.main.buUp.setEnabled(True)
+        self.main.buDown.setEnabled(True)
+        self.main.buUp.setIcon(QtGui.QIcon('images/caret-right.svg'))
+        self.main.buDown.setIcon(QtGui.QIcon('images/caret-right.svg'))
         self.iconbutton(self.main.buHelp, self.button_curve)
         self.main.tabWidget.setCurrentIndex(1)
         self.fhelp.clear()
@@ -1879,7 +1891,6 @@ class ExampleApp(QtWidgets.QMainWindow):
     # ПОСТРОЕНИЕ ВЗЛЕТНОЙ КРИВОЙ (С УЧЕТОМ И БЕЗ УЧЕТА ВЛИЯНИЯ ЭКРАНА ЗЕМЛИ)
     def MakeUp(self):
         self.main.tabWidget.setCurrentIndex(2)
-        self.main.buDown.setVisible(True)
         self.iconbutton(self.main.buUp, self.button_curve)
 
         # 1) Без учета влияния экрана земли
@@ -2100,7 +2111,6 @@ class ExampleApp(QtWidgets.QMainWindow):
     # ПОСТРОЕНИЕ ПОСАДОЧНЫХ КРИВЫХ (С УЧЕТОМ И БЕЗ УЧЕТА ВЛИЯНИЯ ЭКРАНА ЗЕМЛИ)
     def MakeDown(self):
         self.main.tabWidget.setCurrentIndex(3)
-        self.main.buCre.setVisible(True)
         self.iconbutton(self.main.buDown, self.button_curve)
 
         # 1) Без учета влияния экрана земли
@@ -2316,8 +2326,14 @@ class ExampleApp(QtWidgets.QMainWindow):
 
     # ПОСТРОЕНИЕ КРЕЙСЕРСКИХ КРИВЫХ
     def MakeCruise(self):
-        self.main.tabWidget.setCurrentIndex(4)
         self.iconbutton(self.main.buCre, self.button_curve)
+        for p in permission:
+            if p=='':
+                self.main.buUp.setEnabled(False)
+                self.main.buUp.setIcon(QtGui.QIcon('images/x.svg'))
+                self.main.buDown.setEnabled(False)
+                self.main.buDown.setIcon(QtGui.QIcon('images/x.svg'))
+        self.main.tabWidget.setCurrentIndex(4)
 
         list_M = self.func_type(type)
         list_caya_szh = []
@@ -2419,6 +2435,7 @@ class ExampleApp(QtWidgets.QMainWindow):
 
             wb.save('Расчет самолета.xlsx')
         except: self.ErrorMessage()
+        self.MakeHelpPolyr()
 
     # ВСПОМОГАТЕЛЬНАЯ ПОЛЯРА
     def MakeHelpPolyr(self):
@@ -2427,7 +2444,7 @@ class ExampleApp(QtWidgets.QMainWindow):
         self.iconbutton(self.main.buHelpPolyr, self.button_polar)
         for p in permision_for_export:
             if p == '':
-                self.main.buExport.setIcon(QtGui.QIcon('x.svg'))
+                self.main.buExport.setIcon(QtGui.QIcon('images/x.svg'))
 
         print('ВСПОМОГАТЕЛЬНАЯ ПОЛЯРА')
 
@@ -2593,35 +2610,36 @@ class ExampleApp(QtWidgets.QMainWindow):
         try:
             wb = openpyxl.load_workbook('Расчет самолета.xlsx')
             # заполнение второго листа с данными
-            st = wb['Поляры']
+            if type == 'ТРД':
+                st = wb['Поляры']
+            else:
+                st = wb['Поляры ТВД']
             st.cell(18, 2).value = cxo
             st.cell(20, 2).value = Vmin_pol
             st.cell(21, 2).value = M
             st.cell(20, 6).value = delta
 
-            if type == 'ТРД':
-                for col in range(2, 10):
-                    st.cell(4, col).value = linear_size[col - 2]
-                    st.cell(5, col).value = Re_el_for_cxa[col - 2]
-                    st.cell(6, col).value = xtau_el_for_cxa[col - 2]
-                    st.cell(7, col).value = cf_el_for_cxa[col - 2]
-                    st.cell(8, col).value = c_lamda_el_for_cxa[col - 2]
-                    st.cell(9, col).value = nc_el_for_cxa[col - 2]
-                    st.cell(10, col).value = nm_el_for_cxa[col - 2]
-                    st.cell(11, col).value = nint_el_for_cxa[col - 2]
-                    st.cell(12, col).value = cxk_el_for_cxa[col - 2]
-                    st.cell(13, col).value = Sk_el_for_cxa[col - 2]
-                    st.cell(14, col).value = n_el_for_cxa[col - 2]
-                    st.cell(15, col).value = chislitel_el_for_cxa[col - 2]
-                for col in range(2, len(a_list_help)+2):
-                    st.cell(24, col).value = a_list_help[col - 2]
-                    st.cell(25, col).value = cya_list_help[col - 2]
-                    st.cell(26, col).value = cya__list[col - 2]
-                    st.cell(27, col).value = dCxp_list[col - 2]
-                    st.cell(28, col).value = Cxi_list[col - 2]
-                    st.cell(29, col).value = Cxa_list[col - 2]
-            else:
-                print()
+            for col in range(2, 10):
+                st.cell(4, col).value = linear_size[col - 2]
+                st.cell(5, col).value = Re_el_for_cxa[col - 2]
+                st.cell(6, col).value = xtau_el_for_cxa[col - 2]
+                st.cell(7, col).value = cf_el_for_cxa[col - 2]
+                st.cell(8, col).value = c_lamda_el_for_cxa[col - 2]
+                st.cell(9, col).value = nc_el_for_cxa[col - 2]
+                st.cell(10, col).value = nm_el_for_cxa[col - 2]
+                st.cell(11, col).value = nint_el_for_cxa[col - 2]
+                st.cell(12, col).value = cxk_el_for_cxa[col - 2]
+                st.cell(13, col).value = Sk_el_for_cxa[col - 2]
+                st.cell(14, col).value = n_el_for_cxa[col - 2]
+                st.cell(15, col).value = chislitel_el_for_cxa[col - 2]
+            for col in range(2, len(a_list_help) + 2):
+                st.cell(24, col).value = a_list_help[col - 2]
+                st.cell(25, col).value = cya_list_help[col - 2]
+                st.cell(26, col).value = cya__list[col - 2]
+                st.cell(27, col).value = dCxp_list[col - 2]
+                st.cell(28, col).value = Cxi_list[col - 2]
+                st.cell(29, col).value = Cxa_list[col - 2]
+
             wb.save('Расчет самолета.xlsx')
         except:
             self.ErrorMessage()
@@ -2638,7 +2656,7 @@ class ExampleApp(QtWidgets.QMainWindow):
         self.iconbutton(self.main.buUpPolyr, self.button_polar)
         for p in permision_for_export:
             if p == '':
-                self.main.buExport.setIcon(QtGui.QIcon('x.svg'))
+                self.main.buExport.setIcon(QtGui.QIcon('images/x.svg'))
                 self.main.buExport.setEnabled(False)
             else:
                 self.main.buExport.setEnabled(True)
@@ -2761,15 +2779,18 @@ class ExampleApp(QtWidgets.QMainWindow):
         self.cP_Up.draw()
         self.fP_Up.savefig('graphics/P_Up.png')
 
-        self.main.la_Vvzl.setText(str(Vvzl))
-        self.main.la_M_vzl.setText(str(Mvzl))
-        self.main.la_cxo_vzl.setText(str(cxo_vzl))
+        self.main.la_Vvzl.setText(str(float('%.3f' % Vvzl)))
+        self.main.la_M_vzl.setText(str(float('%.3f' % Mvzl)))
+        self.main.la_cxo_vzl.setText(str(float('%.3f' % cxo_vzl)))
 
         try:
 
             wb = openpyxl.load_workbook('Расчет самолета.xlsx')
             # заполнение второго листа с данными
-            st = wb['Поляры']
+            if type == 'ТРД':
+                st = wb['Поляры']
+            else:
+                st = wb['Поляры ТВД']
             st.cell(48, 3).value = dCxomax
             st.cell(49, 3).value = float('%.4f' % self.find_dCxo_zak(bzak_, deltavzl))
             st.cell(50, 2).value = Mvzl
@@ -2808,7 +2829,7 @@ class ExampleApp(QtWidgets.QMainWindow):
         self.iconbutton(self.main.buDownPolyr, self.button_polar)
         for p in permision_for_export:
             if p == '':
-                self.main.buExport.setIcon(QtGui.QIcon('x.svg'))
+                self.main.buExport.setIcon(QtGui.QIcon('images/x.svg'))
                 self.main.buExport.setEnabled(False)
             else:
                 self.main.buExport.setEnabled(True)
@@ -2938,13 +2959,16 @@ class ExampleApp(QtWidgets.QMainWindow):
         self.cP_Down.draw()
         self.fP_Down.savefig('graphics/P_Down.png')
 
-        self.main.la_Vpos.setText(str(Vdown))
-        self.main.la_M_pos.setText(str(Mdown))
-        self.main.la_cxo_pos.setText(str(cxo_down))
+        self.main.la_Vpos.setText(str(float('%.3f' % Vdown)))
+        self.main.la_M_pos.setText(str(float('%.3f' % Mdown)))
+        self.main.la_cxo_pos.setText(str(float('%.3f' % cxo_down)))
         try:
             wb = openpyxl.load_workbook('Расчет самолета.xlsx')
             # заполнение второго листа с данными
-            st = wb['Поляры']
+            if type == 'ТРД':
+                st = wb['Поляры']
+            else:
+                st = wb['Поляры ТВД']
             st.cell(94, 3).value = float('%.4f' % self.find_dCxo_zak(bzak_, deltapos))
             st.cell(95, 2).value = Mdown
             st.cell(96, 2).value = Vdown
@@ -2979,14 +3003,14 @@ class ExampleApp(QtWidgets.QMainWindow):
         self.iconbutton(self.main.buCrePolyr, self.button_polar)
         for p in permision_for_export:
             if p == '':
-                self.main.buExport.setIcon(QtGui.QIcon('x.svg'))
+                self.main.buExport.setIcon(QtGui.QIcon('images/x.svg'))
                 self.main.buExport.setEnabled(False)
             else:
                 self.main.buExport.setEnabled(True)
 
         self.fP_Cre.clear()  # отчистка графика
         ax = self.fP_Cre.add_subplot()
-
+        global list_K
         list_M = self.func_type(type)
         list_M.pop(0)
         # print(list_M)
@@ -2994,279 +3018,303 @@ class ExampleApp(QtWidgets.QMainWindow):
         list_Re = []
         list_Xak=[]
         list_2cf=[]
-        list_nM = []
+        list_nM =[]
         list_cxo_cruise = []
         list_lamdan = c_lamda_el_for_cxa.copy()
         list_lamdan[4]=lamdanf
         list_lamdan[5]=lamdan_gd
         list_lamdan[6]=lamdan_gsh
-        try:
-            wb = openpyxl.load_workbook('Расчет самолета.xlsx')
+
+        #
+        wb = openpyxl.load_workbook('Расчет самолета.xlsx')
+        if type == 'ТРД':
             st = wb['Поляры']
-            arr = [linear_size, list_lamdan, xtau_el_for_cxa, nc_for_cre, nint_for_cre, Sk_el_for_cxa,n_el_for_cxa, S_proiz]
-            i = 0
-            for row in range(141, 149):
-                for col in range(2, 10):
-                    list_row = arr[i]
-                    st.cell(row, col).value = list_row[col-2]
-                i +=1
+        else:
+            st = wb['Поляры ТВД']
+        arr = [linear_size, list_lamdan, xtau_el_for_cxa, nc_for_cre, nint_for_cre, Sk_el_for_cxa, n_el_for_cxa,
+               S_proiz]
+        i1 = 0
+        for row in range(141, 149):
+            for col in range(2, 10):
+                list_row = arr[i1]
+                st.cell(row, col).value = list_row[col - 2]
+            i1 += 1
 
-            print ('КРЕЙСЕРСКИЕ ПОЛЯРЫ')
-            row = 148
-            for M in list_M:
-                list_Re.clear()
-                list_Xak.clear()
-                list_2cf.clear()
-                list_nM.clear()
-                i=0
-                for el in linear_size:
-                    if el != 0:
-                        Re = 0
-                        index = linear_size.index(el)
-                        el_c_lamda= list_lamdan[index]
-                        xt = xtau_el_for_cxa[index]
-                        if M == 0:
-                            Re = (Vmin*el)/(vH * math.pow(10,6))
-                        else:
-                            Re = (M * aH * el)/(vH* math.pow(10,6))
-                        list_Re.append(float('%.3f' % Re))
-                        list_2cf.append(self.find_2cf(xt, Re))
-                        if index < 4:
-                            list_nM.append(self.call_nM_wing(el_c_lamda*100, M))
-                        else:
-                            list_nM.append(self.call_nM_body_rotation(el_c_lamda, M))
-                        Xak = list_2cf[index] * S_proiz[index] * list_nM[index]
-                        list_Xak.append(float('%.3f' % Xak))
+        row = 148
+        #
+        for M in list_M:
+            list_Re.clear()
+            list_Xak.clear()
+            list_2cf.clear()
+            list_nM.clear()
+            for el in linear_size:
+                if el != 0:
+                    index = linear_size.index(el)
+                    el_c_lamda = list_lamdan[index]
+                    xt = xtau_el_for_cxa[index]
+                    if M == 0:
+                        Re = (Vmin * el) / (vH * math.pow(10, 6))
                     else:
-                        list_Xak.append(0)
-                        list_Re.append(0)
-                        list_2cf.append(0)
-                        list_nM.append(0)
-                # t = PrettyTable(['Крыло', "Гор оперение", "Вер оперение", "Пилон", "Фюзеляж", "ГД", "ГШ", "Фонарь"])
-                # t.add_row(list_Re)
-                # t.add_row(list_2cf)
-                # t.add_row(list_nM)
-                # t.add_row(list_Xak)
-                # print()
-                # print('M = '+ str(M))
-                # print(t)
-                row += 2
-                if row == 150:
-                    st.cell(row, 5).value = Vmin
+                        Re = (M * aH * el) / (vH * math.pow(10, 6))
+                    list_Re.append(float('%.3f' % Re))
+                    list_2cf.append(self.find_2cf(xt, Re))
+                    if index < 4:
+                        list_nM.append(self.call_nM_wing(el_c_lamda * 100, M))
+                    else:
+                        list_nM.append(self.call_nM_body_rotation(el_c_lamda, M))
+                    Xak = list_2cf[index] * S_proiz[index] * list_nM[index]
+                    list_Xak.append(float('%.3f' % Xak))
                 else:
-                    st.cell(row, 5).value = float('%.4f' % (M * aH))
-                row += 2
-                arr = [list_Re, list_2cf, list_nM, list_Xak]
-                for r in range(row, row+4):
-                    for col in range(2, 10):
-                        list_row = arr[i]
-                        st.cell(r, col).value = list_row[col - 2]
-                    i += 1
-
-                cxo_cruise = float('%.5f' % (sum(list_Xak) * 1.04 / S))
-                list_cxo_cruise.append(cxo_cruise)
-                row +=4
-                st.cell(row, 2).value = cxo_cruise
-                # print('cxo = ' + str(cxo_cruise))
-
-                cos = math.cos(xc_degree)
-
+                    list_Xak.append(0)
+                    list_Re.append(0)
+                    list_2cf.append(0)
+                    list_nM.append(0)
+            # t = PrettyTable(['Крыло', "Гор оперение", "Вер оперение", "Пилон", "Фюзеляж", "ГД", "ГШ", "Фонарь"])
+            # t.add_row(list_Re)
+            # t.add_row(list_2cf)
+            # t.add_row(list_nM)
+            # t.add_row(list_Xak)
+            # print()
+            # print('M = ' + str(M))
+            # print(t)
+            #
+            row += 2
+            if row == 150:
+                st.cell(row, 5).value = Vmin
+            else:
+                st.cell(row, 5).value = float('%.4f' % (M * aH))
+            row += 2
+            arr.clear()
+            arr = [list_Re, list_2cf, list_nM, list_Xak]
+            i2=0
+            for r in range(row, row + 4):
+                for col in range(2, 10):
+                    list_row = arr[i2]
+                    st.cell(r, col).value = list_row[col - 2]
+                i2 += 1
+            #
+            cxo_cruise = float('%.5f' % (sum(list_Xak) * 1.04 / S))
+            list_cxo_cruise.append(cxo_cruise)
+            row += 4
+            st.cell(row, 2).value = cxo_cruise
+            # print('cxo = ' + str(cxo_cruise))
+            cos = math.cos(xc_degree)
             # Максимальный коэф волнового сопротивления при числе Маха =
-            Mc_xvo_max = math.pow(cos,-1) * (1 + 0.4 * (math.pow(c_, 3/2) / math.pow(cos, 2/3)) *
-                                                                 (2 - lamdaef*math.pow(c_*cos*cos, 1/3)))
-            cxvo_max = (2 * math.pi * lamdaef * c_ * c_ * cos) / (2 + lamdaef * math.pow(c_, 1/3) * math.pow(cos, 5/3))
-            # print('M max = ' + str(float('%.3f' % Mc_xvo_max)))
-            # print('C max = ' + str(float('%.3f' % cxvo_max)))
+        Mc_xvo_max = math.pow(cos, -1) * (1 + 0.4 * (math.pow(c_, 3 / 2) / math.pow(cos, 2 / 3)) *
+                                          (2 - lamdaef * math.pow(c_ * cos * cos, 1 / 3)))
+        cxvo_max = (2 * math.pi * lamdaef * c_ * c_ * cos) / (2 + lamdaef * math.pow(c_, 1 / 3) * math.pow(cos, 5 / 3))
+        # print('M max = ' + str(float('%.3f' % Mc_xvo_max)))
+        # print('C max = ' + str(float('%.3f' % cxvo_max)))
+        if type=='ТРД':
             st.cell(200, 3).value = Mc_xvo_max
             st.cell(201, 3).value = cxvo_max
+        else:
+            st.cell(192, 3).value = Mc_xvo_max
+            st.cell(193, 3).value = cxvo_max
 
-            # расчет координат поляр
-            list_cya = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7]
-            list_cxi=[]
-            list_cxa = []
-            list_cxvo = []
-            list_cxvi = []
-            list_Am=[]
-            delta = self.call_delta(lamdaef, n)
-            print(delta)
-
-            l_M0=[]
-            l_M7=[]
-            l_M8=[]
-            l_M85=[]
-            l_M9=[]
-            l_M95=[]
-
-            l_M4 = []
-            l_M5 = []
-            l_M6 = []
-            list_cxa_POL =[]
-
+        # расчет координат поляр
+        list_cya = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7]
+        list_cxi = []
+        list_cxa = []
+        list_cxvo = []
+        list_cxvi = []
+        list_Am=[]
+        delta = self.call_delta(lamdaef, n)
+        # print(delta)
+        l_M0 = []
+        l_M7 = []
+        l_M8 = []
+        l_M85 = []
+        l_M9 = []
+        l_M95 = []
+        l_M4 = []
+        l_M5 = []
+        l_M6 = []
+        list_cxa_POL = []
+        if type == 'ТРД':
             row = 201
-            for cya in list_cya:
-                Mkr = list_Mkr[list_cya.index(cya)]
-                list_cxi.clear()
-                list_cxa.clear()
-                list_cxvo.clear()
-                list_cxvi.clear()
-                list_Am.clear()
-                q=0
-                for M in list_M:
-                    i = list_M.index(M)
-                    # коэффициент вихревого сопротивления
-                    cxi = math.pow(cya, 2)/(math.pi*lamdaef) * (1+delta)/math.sqrt(1-M*M)
-                    list_cxi.append(float('%.5f' % cxi))
-                    if type == 'ТРД':
-                        if M > Mkr:
-                            # составляющая коэф волнового сопротивления, не зависящая от cya
-                            Am = (M - Mkr) / (Mc_xvo_max - Mkr)
-                            list_Am.append(float('%.5f' % Am))
-                            cxvo = cxvo_max * math.pow(Am, 3) * (4 - 3 * Am)
-                            list_cxvo.append(float('%.5f' % cxvo))
-                            # коэф волнового сопротивления
-                            cxvi = 25 * lamdaef * math.pow(c_, 1 / 3) * math.pow(M - Mkr, 3) * cxi
-                            list_cxvi.append(float('%.5f' % cxvi))
-                        else:
-                            list_Am.append(0)
-                            list_cxvo.append(0)
-                            list_cxvi.append(0)
-                        # КЛС
-                        cxa = list_cxo_cruise[i] + list_cxi[i]+list_cxvo[i]+list_cxvi[i]
-                        list_cxa.append(float('%.5f' % cxa))
-                        #СДЕЛАНО ПО ТУПОМУ!!!!!!!!!!!!!!
-                        if M==0:
-                            l_M0.append(cxa)
-                        elif M==0.7:
-                            l_M7.append(cxa)
-                        elif M==0.8:
-                            l_M8.append(cxa)
-                        elif M==0.85:
-                            l_M85.append(cxa)
-                        elif M==0.9:
-                            l_M9.append(cxa)
-                        elif M==0.95:
-                            l_M95.append(cxa)
-                    else:
-                        # КЛС
-                        cxa = list_cxo_cruise[i] + list_cxi[i]
-                        list_cxa.append(float('%.5f' % cxa))
-                        if M == 0:
-                            l_M0.append(cxa)
-                        elif M == 0.4:
-                            l_M4.append(cxa)
-                        elif M == 0.5:
-                            l_M5.append(cxa)
-                        elif M == 0.6:
-                            l_M6.append(cxa)
-                        elif M == 0.7:
-                            l_M7.append(cxa)
+        else:
+            row = 192
+        for cya in list_cya:
+            Mkr = list_Mkr[list_cya.index(cya)]
+            list_cxi.clear()
+            list_cxa.clear()
+            list_cxvo.clear()
+            list_cxvi.clear()
+            list_Am.clear()
+            q=0 #########
+            for M in list_M:
+                i = list_M.index(M)
+                # коэффициент вихревого сопротивления
+                cxi = math.pow(cya, 2) / (math.pi * lamdaef) * (1 + delta) / math.sqrt(1 - M * M)
+                list_cxi.append(float('%.5f' % cxi))
                 if type == 'ТРД':
-                    list_cxa_POL = [l_M0, l_M7, l_M8, l_M85, l_M9, l_M95]
-                    # t = PrettyTable()
-                    # t.add_column("M", list_M)
-                    # t.add_column("cxo",list_cxo_cruise)
-                    # t.add_column( "cxi", list_cxi)
-                    # t.add_column('cxvo', list_cxvo)
-                    # t.add_column('cxvi', list_cxvi)
-                    # t.add_column("cxa", list_cxa)
-                    # print()
-                    # print('cya = ' + str(cya))
-                    # print('Mkr = ' + str(Mkr))
-                    # print(t)
-                    row += 3
-                    st.cell(row, 2).value = Mkr
-                    arr = [list_cxo_cruise, list_cxi, list_Am, list_cxvo, list_cxvi, list_cxa]
-                    for col in range(4, 10):
-                        p=0
-                        for r in range(row, row + 6):
-                            list_col = arr[q]
-                            st.cell(r, col).value = list_col[p]
-                            p+=1
-                        q += 1
-                    row +=5
-
+                    if M > Mkr:
+                        # составляющая коэф волнового сопротивления, не зависящая от cya
+                        Am = (M - Mkr) / (Mc_xvo_max - Mkr)
+                        list_Am.append(float('%.5f' % Am))
+                        cxvo = cxvo_max * math.pow(Am, 3) * (4 - 3 * Am)
+                        list_cxvo.append(float('%.5f' % cxvo))
+                        # коэф волнового сопротивления
+                        cxvi = 25 * lamdaef * math.pow(c_, 1 / 3) * math.pow(M - Mkr, 3) * cxi
+                        list_cxvi.append(float('%.5f' % cxvi))
+                    else:
+                        list_cxvo.append(0)
+                        list_cxvi.append(0)
+                        list_Am.append(0)
+                    # КЛС
+                    cxa = list_cxo_cruise[i] + list_cxi[i] + list_cxvo[i] + list_cxvi[i]
+                    list_cxa.append(float('%.5f' % cxa))
+                    # СДЕЛАНО ПО ТУПОМУ!!!!!!!!!!!!!!
+                    if M == 0:
+                        l_M0.append(cxa)
+                    elif M == 0.7:
+                        l_M7.append(cxa)
+                    elif M == 0.8:
+                        l_M8.append(cxa)
+                    elif M == 0.85:
+                        l_M85.append(cxa)
+                    elif M == 0.9:
+                        l_M9.append(cxa)
+                    elif M == 0.95:
+                        l_M95.append(cxa)
                 else:
-                    list_cxa_POL = [l_M0, l_M4, l_M5, l_M6, l_M7]
-                    t = PrettyTable()
-                    t.add_column("M",list_M)
-                    t.add_column("cxo",list_cxo_cruise)
-                    t.add_column("cxi",list_cxi)
-                    t.add_column("cxa", list_cxa)
-                    print()
-                    print('cya = ' + str(cya))
-                    print(t)
+                    # КЛС
+                    cxa = list_cxo_cruise[i] + list_cxi[i]
+                    list_cxa.append(float('%.5f' % cxa))
+                    if M == 0:
+                        l_M0.append(cxa)
+                    elif M == 0.4:
+                        l_M4.append(cxa)
+                    elif M == 0.5:
+                        l_M5.append(cxa)
+                    elif M == 0.6:
+                        l_M6.append(cxa)
+                    elif M == 0.7:
+                        l_M7.append(cxa)
+            if type == 'ТРД':
+                list_cxa_POL = [l_M0, l_M7, l_M8, l_M85, l_M9, l_M95]
+                row += 3
+                st.cell(row, 2).value = Mkr
+                arr.clear()
+                arr = [list_cxo_cruise, list_cxi, list_Am, list_cxvo, list_cxvi, list_cxa]
+                for col in range(4, 10):
+                    p = 0
+                    for r in range(row, row + 6):
+                        list_col = arr[q]
+                        st.cell(r, col).value = list_col[p]
+                        p += 1
+                    q += 1
+                row += 5
 
-            # отрисовка
-            # print(list_cxa)
-            for l in list_cxa_POL:
-                tck, u = interpolate.splprep([l, list_cya], s=0, k=2)
+                # t = PrettyTable()
+                # t.add_column("M", list_M)
+                # t.add_column("cxo", list_cxo_cruise)
+                # t.add_column("cxi", list_cxi)
+                # t.add_column('cxvo', list_cxvo)
+                # t.add_column('cxvi', list_cxvi)
+                # t.add_column("cxa", list_cxa)
+                # print()
+                # print('cya = ' + str(cya))
+                # print('Mkr = ' + str(Mkr))
+                # print(t)
+            else:
+                list_cxa_POL = [l_M0, l_M4, l_M5, l_M6, l_M7]
+                self.main.buFindK.setEnabled(False)
+                self.main.cb_H.setEnabled(False)
+                self.main.cb_M.setEnabled(False)
+                row += 4
+                st.cell(row, 2).value = Mkr
+                arr.clear()
+                arr = [list_cxo_cruise, list_cxi, list_cxa]
+                for col in range(4, 7):
+                    p = 0
+                    for r in range(row, row + 5):
+                        list_col = arr[q]
+                        st.cell(r, col).value = list_col[p]
+                        p += 1
+                    q += 1
+                row += 4
+
+                # t = PrettyTable()
+                # t.add_column("M", list_M)
+                # t.add_column("cxo", list_cxo_cruise)
+                # t.add_column("cxi", list_cxi)
+                # t.add_column("cxa", list_cxa)
+                # print()
+                # print('cya = ' + str(cya))
+                # print(t)
+        # отрисовка
+        for l in list_cxa_POL:
+            tck, u = interpolate.splprep([l, list_cya], s=0, k=2)
+            xnew, ynew = interpolate.splev(np.linspace(0, 1, 100), tck)
+            ax.plot(xnew, ynew, '',  color='k')
+            text = 'M = ' + str(list_M[list_cxa_POL.index(l)])
+            ax.text(l[-1], list_cya[-1], text, rotation=0, fontsize=7)
+
+        # index = 0
+        # for i, j in zip(Cxa_list_up_scrin, cya_list_up_scrin):
+        #     ax.annotate(str(a_list_up_scrin[index]), xy=(i, j))
+        #     index += 1
+
+        print('ПОЛЕТНЫЕ ПОЛЯРЫ')
+        list_H = [0, 3000, 6000, 9000, 12000]
+        list_cya_pol = []
+        l_H0 = []
+        l_H3 = []
+        l_H6 = []
+        l_H9 = []
+        l_H12 = []
+
+        Vmin_rash = math.sqrt((2 * Gpol * g) / (0.85 * pH * S * Cyamax))
+        Mmin_rash = Vmin_rash / aH
+
+        row =272
+        if type == "ТРД":
+            for H_ in list_H:
+                self.find_with_H(H_)
+                list_cya_pol.clear()
+                for M in list_M:
+                    cya = 0
+                    if M != 0:
+                        cya = (2 * Gpol * g) / (pH * S * aH * aH * M * M)
+                    else:
+                        cya = (2 * Gpol * g) / (pH * S * aH * aH * Mmin_rash * Mmin_rash)
+                    list_cya_pol.append(float('%.4f' % cya))
+
+                row += 3
+                st.cell(row, 2).value = pH
+                st.cell(row + 1, 2).value = aH
+                row += 3
+                i3 = 0
+                for col in range(1, 7):
+                    cell = st.cell(row, col)
+                    cell.value = list_cya_pol[i3]
+                    i3 += 1
+
+                l_H = self.Pol_Polar(list_cxa_POL, list_cya_pol)
+                list_K.append(self.Find_K(l_H, list_cya_pol))
+
+                tck, u = interpolate.splprep([l_H, list_cya_pol], s=0, k=2)
                 xnew, ynew = interpolate.splev(np.linspace(0, 1, 100), tck)
-                ax.plot(l, list_cya, '.', xnew, ynew, color='tab:blue')
+                ax.plot(l_H, list_cya_pol, '.', xnew, ynew, color='tab:blue')
+                # t = PrettyTable(list_M)
+                # t.add_row(list_cya_pol)
+                # print()
+                # print('H = ' + str(H_))
+                # print(t)
 
-            # index = 0
-            # for i, j in zip(Cxa_list_up_scrin, cya_list_up_scrin):
-            #     ax.annotate(str(a_list_up_scrin[index]), xy=(i, j))
-            #     index += 1
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
+        ax.set_ylabel('$\it{Cya}$', loc='top', rotation=0)
+        ax.set_xlabel('$\it{Cxa}$', loc='right', fontsize=11)
+        self.fP_Cre.tight_layout()
 
-            ax.spines["top"].set_visible(False)
-            ax.spines["right"].set_visible(False)
-            ax.set_ylabel('$\it{Cya}$', loc='top', rotation=0)
-            ax.set_xlabel('$\it{Cxa}$', loc='right', fontsize=11)
-            self.fP_Cre.tight_layout()
+        self.cP_Cre.draw()
+        self.fP_Cre.savefig('graphics/P_Cre.png')
+        wb.save('Расчет самолета.xlsx')
 
-            print('ПОЛЕТНЫЕ ПОЛЯРЫ')
-            list_H=[0, 3000, 6000, 9000, 12000]
-            list_cya_pol = []
-            l_H0=[]
-            l_H3=[]
-            l_H6=[]
-            l_H9=[]
-            l_H12=[]
-
-            # print(list_M)
-            # print(H)
-            # ph_rash = pH
-            # ah_rash = aH
-            Vmin_rash = math.sqrt((2*Gpol*g)/(0.85*pH*S*Cyamax))
-            Mmin_rash = Vmin_rash / aH
-            row = 272
-            if type == "ТРД":
-                for H_ in list_H:
-                    self.find_with_H(H_)
-                    list_cya_pol.clear()
-                    for M in list_M:
-                        cya=0
-                        if M != 0:
-                            cya = (2*Gpol*g)/(pH*S*aH*aH*M*M)
-                        else:
-                            cya = (2 * Gpol * g) / (pH * S * aH*aH*Mmin_rash*Mmin_rash)
-                        list_cya_pol.append(float('%.4f' % cya))
-
-                    row +=3
-                    st.cell(row, 2).value = pH
-                    st.cell(row+1, 2).value = aH
-                    row += 3
-                    i = 0
-                    for col in range(1, 7):
-                        cell = st.cell(row, col)
-                        cell.value = list_cya_pol[i]
-                        i += 1
-
-                    l_H = self.Pol_Polar(list_cxa_POL, list_cya_pol)
-                    tck, u = interpolate.splprep([l_H, list_cya_pol], s=0, k=2)
-                    xnew, ynew = interpolate.splev(np.linspace(0, 1, 100), tck)
-                    ax.plot(l_H, list_cya_pol, '.', xnew, ynew, color='tab:blue')
-
-                    # t = PrettyTable(list_M)
-                    # t.add_row(list_cya_pol)
-                    # print()
-                    # print('H = ' + str(H_))
-                    # print(t)
-
-            wb.save('Расчет самолета.xlsx')
-            self.cP_Cre.draw()
-            self.fP_Cre.savefig('graphics/P_Cre.png')
-        except: self.ErrorMessage()
+        # except: self.ErrorMessage()
 
     def Pol_Polar(self, list_cxa_POL, list_cya_pol):
         list_cya = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7]
@@ -3279,13 +3327,40 @@ class ExampleApp(QtWidgets.QMainWindow):
             index += 1
             cxa_point = 0
             for x in xnew:
-                if ynew[np.where(xnew == x)] - list_cya_pol[index] < min and ynew[np.where(xnew == x)] - list_cya_pol[index] > 0:
+                f = ynew[np.where(xnew == x)] - list_cya_pol[index]
+                s = ynew[np.where(xnew == x)] - list_cya_pol[index]
+                if f < min and s > 0:
                     min = ynew[np.where(xnew == x)] - list_cya_pol[index]
                     cxa_point = x
                 if list_cya_pol[index] > 0.7:
                     cxa_point = l[-1]
             l_H.append(cxa_point)
         return l_H
+
+    def Find_K(self, l_cxa, l_cya):
+        list_M = [0, 0.7, 0.8, 0.85, 0.9, 0.95]
+        list_K= []
+        for M in list_M:
+            cxa = l_cxa[list_M.index(M)]
+            cya = l_cya[list_M.index(M)]
+            try:
+                K =cya/cxa
+            except: K=0
+            list_K.append(float('%.5f' % K))
+        return list_K
+
+    def pressedK(self):
+        Height = self.main.cb_H.currentText()
+        Mah = self.main.cb_M.currentText()
+        self.main.la_K.setText(str(self.Show_K(Height, Mah)))
+
+    def Show_K(self, H, M):
+        list_H = ['0', '3000', '6000', '9000', '12000']
+        list_M = ['0', '0,7', '0,8', '0,85', '0,9', '0,95']
+        need_list_K = list_K[list_H.index(H)]
+        index = list_M.index(M)
+        K = need_list_K[index]
+        return K
 
     def ExportData(self):
         wb = openpyxl.load_workbook('Шаблон ТРД.xlsx')
@@ -3322,7 +3397,10 @@ class ExampleApp(QtWidgets.QMainWindow):
 
         wb = openpyxl.load_workbook('Расчет самолета.xlsx')
         st = wb['Кривые']
-        st_2 = wb['Поляры']
+        if type == 'ТРД':
+            st_2 = wb['Поляры']
+        else:
+            st_2 = wb['Поляры ТВД']
         img = Image('graphics/Mkr.png')
         img.height = 256
         img.width = 468
@@ -3358,7 +3436,12 @@ class ExampleApp(QtWidgets.QMainWindow):
         img_8 = Image('graphics/P_Cre.png')
         img_8.height = 283
         img_8.width = 537
-        st_2.add_image(img_8, 'B304')
+        if type == 'ТРД':
+            st_2.add_image(img_8, 'B304')
+            wb.remove(wb['Поляры ТВД'])
+        else:
+            st_2.add_image(img_8, 'B258')
+            wb.remove(wb['Поляры'])
 
         wb.save(file_info)
 
