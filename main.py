@@ -218,6 +218,7 @@ class DialogPlan(QtWidgets.QDialog):
         self.dialog.tabPlan.setTabVisible(2, False)
         self.dialog.tabPlan.setTabVisible(3, False)
         self.dialog.tabPlan.setTabVisible(4, False)
+        self.dialog.tabPlan.setTabVisible(5, False)
         self.dialog.tabPlan.setCurrentIndex(0)
 
 
@@ -236,9 +237,11 @@ class DialogPlan(QtWidgets.QDialog):
             self.dialog.tabPlan.setCurrentIndex(4)
             t = '5'
         elif index == 4:
+            self.dialog.tabPlan.setCurrentIndex(5)
+            t = '6'
+        elif index == 5:
             self.dialog.tabPlan.setCurrentIndex(0)
             t = '1'
-
         self.dialog.label_6.setText('Рисунок '+t)
 
 
@@ -246,8 +249,8 @@ class DialogPlan(QtWidgets.QDialog):
         index = self.dialog.tabPlan.currentIndex()
 
         if index == 0:
-            self.dialog.tabPlan.setCurrentIndex(4)
-            t='5'
+            self.dialog.tabPlan.setCurrentIndex(5)
+            t='6'
         elif index == 1:
             self.dialog.tabPlan.setCurrentIndex(0)
             t='1'
@@ -260,6 +263,9 @@ class DialogPlan(QtWidgets.QDialog):
         elif index == 4:
             self.dialog.tabPlan.setCurrentIndex(3)
             t='4'
+        elif index == 5:
+            self.dialog.tabPlan.setCurrentIndex(4)
+            t='5'
 
         self.dialog.label_6.setText('Рисунок ' + t)
 
@@ -3025,7 +3031,7 @@ class ExampleApp(QtWidgets.QMainWindow):
         list_lamdan[5]=lamdan_gd
         list_lamdan[6]=lamdan_gsh
 
-        #
+        #TRYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY
         wb = openpyxl.load_workbook('Расчет самолета.xlsx')
         if type == 'ТРД':
             st = wb['Поляры']
@@ -3280,6 +3286,8 @@ class ExampleApp(QtWidgets.QMainWindow):
                         cya = (2 * Gpol * g) / (pH * S * aH * aH * M * M)
                     else:
                         cya = (2 * Gpol * g) / (pH * S * aH * aH * Mmin_rash * Mmin_rash)
+                    # if cya <= 0.7:
+                    #     cya = 0.7
                     list_cya_pol.append(float('%.4f' % cya))
 
                 row += 3
@@ -3328,11 +3336,10 @@ class ExampleApp(QtWidgets.QMainWindow):
             cxa_point = 0
             for x in xnew:
                 f = ynew[np.where(xnew == x)] - list_cya_pol[index]
-                s = ynew[np.where(xnew == x)] - list_cya_pol[index]
-                if f < min and s > 0:
+                if 0 < f < min :
                     min = ynew[np.where(xnew == x)] - list_cya_pol[index]
                     cxa_point = x
-                if list_cya_pol[index] > 0.7:
+                if list_cya_pol[index] >= 0.7:
                     cxa_point = l[-1]
             l_H.append(cxa_point)
         return l_H
