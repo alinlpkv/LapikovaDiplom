@@ -1,27 +1,31 @@
+
 import sqlite3
+#
+#
+
 import PyQt5
-import sys  # sys нужен для передачи argv в QApplication
-import matplotlib.patches
-import openpyxl
 from PyQt5 import QtWidgets, QtCore, QtGui
 from PyQt5.QtGui import QCursor
-from PyQt5.QtWidgets import QVBoxLayout, QTableWidgetItem, QHBoxLayout, QGridLayout, QLabel, QMessageBox
-# from matplotlib.backends.backend_template import FigureCanvas
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from UI import Ui_MainWindow  # Это наш конвертированный файл дизайна
-import math
-from matplotlib.backends.backend_qt5agg import (NavigationToolbar2QT as NavigationToolbar)
-import matplotlib.pyplot as plt
-import numpy as np
-from scipy import interpolate
+from PyQt5.QtWidgets import QVBoxLayout, QTableWidgetItem, QLabel, QMessageBox
+import sys
+from UI import Ui_MainWindow
 from UI_Choose import Ui_Form
 from UI_dialog import Ui_Dialog
-from prettytable import PrettyTable
+from UI_bu_help import Ui_Dialog_help
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_qt5agg import (NavigationToolbar2QT as NavigationToolbar)
+import matplotlib.pyplot as plt
+import math
+import numpy as np
+from scipy import interpolate
+import openpyxl
 from openpyxl.drawing.image import Image
-from os.path import expanduser
 
+from prettytable import PrettyTable
+#import matplotlib.patches
 # GLOBAL
 # Wing
+# from os.path import expanduser
 
 l = 0
 S = 0
@@ -201,14 +205,18 @@ lamdaef_down_scrin=0
 # крейсерская
 list_Mkr=[]
 list_K=[]
-
 # ДИАЛОГОВОЕ ОКНО С РАСЧЕТНЫМИ СХЕМАМИ
 class DialogPlan(QtWidgets.QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.dialog = Ui_Dialog()
         self.dialog.setupUi(self)
+        self.setFixedSize(self.size())
         self.setBu()
+        self.pixmap = QtGui.QPixmap("images/схема.png")
+        self.dialog.label_6.setText('Рисунок 1')
+        self.scale = 1
+        self.posX, self.posY = 0,0
 
     def setBu(self):
         self.dialog.buNext.clicked.connect(self.NextPic)
@@ -221,56 +229,198 @@ class DialogPlan(QtWidgets.QDialog):
         self.dialog.tabPlan.setTabVisible(5, False)
         self.dialog.tabPlan.setCurrentIndex(0)
 
+        self.dialog.label.installEventFilter(self)
+        self.dialog.label.setMouseTracking(True)
+
+        self.dialog.label_2.installEventFilter(self)
+        self.dialog.label_2.setMouseTracking(True)
+
+        self.dialog.label_3.installEventFilter(self)
+        self.dialog.label_3.setMouseTracking(True)
+
+        self.dialog.label_4.installEventFilter(self)
+        self.dialog.label_4.setMouseTracking(True)
+
+        self.dialog.label_7.installEventFilter(self)
+        self.dialog.label_7.setMouseTracking(True)
+
+        self.dialog.label_5.installEventFilter(self)
+        self.dialog.label_5.setMouseTracking(True)
+
+    # def mouseMoveEvent(self, QMouseEvent):
+    #     print(QMouseEvent.pos())
+
+    def eventFilter(self, obj, event):
+        if (obj is self.dialog.label or self.dialog.label_2 or self.dialog.label_3
+            or self.dialog.label_4 or self.dialog.label_7 or self.dialog.label_5):
+            if event.type() == QtCore.QEvent.Wheel:
+                if event.angleDelta().y() > 0:
+                    self.zoomIn(obj)
+                else:
+                    self.zoomOut(obj)
+            if event.type() == QtCore.QEvent.MouseMove:
+                self.getMousePosition(event)
+
+
+        return super(DialogPlan, self).eventFilter(obj, event)
+
+    def getMousePosition(self, event):
+        positions = event.pos();
+        self.posX , self.posY = positions.x(), positions.y()
+
+    def zoomIn(self, obj):
+        self.scale *= 1.1
+        self.resize_image(obj)
+
+    def zoomOut(self, obj):
+        self.scale /= 1.1
+        self.resize_image(obj)
+
+    def resize_image(self, obj):
+       size = self.pixmap.size()
+       scaled_pixmap = self.pixmap.scaled(int(self.pixmap.width() * self.scale), int(self.pixmap.height() * self.scale), QtCore.Qt.KeepAspectRatio)
+       obj.setPixmap(scaled_pixmap)
+
+    def refreshImage(self, obj):
+        self.scale = 1
+        obj.setPixmap(self.pixmap)
 
     def NextPic(self):
         index = self.dialog.tabPlan.currentIndex()
+        # match index:
+        #     case 0:
+        #         self.dialog.tabPlan.setCurrentIndex(1)
+        #         t = '2'
         if index == 0:
             self.dialog.tabPlan.setCurrentIndex(1)
+            self.pixmap = QtGui.QPixmap("images/схема2.png")
+            self.refreshImage(self.dialog.label_2)
             t = '2'
         elif index == 1:
             self.dialog.tabPlan.setCurrentIndex(2)
+            self.pixmap = QtGui.QPixmap("2.png")
+            self.refreshImage(self.dialog.label_3)
             t = '3'
         elif index == 2:
             self.dialog.tabPlan.setCurrentIndex(3)
+            self.pixmap = QtGui.QPixmap("1.png")
+            self.refreshImage(self.dialog.label_4)
             t = '4'
         elif index == 3:
             self.dialog.tabPlan.setCurrentIndex(4)
+            self.pixmap = QtGui.QPixmap("images/носовая часть.png")
+            self.refreshImage(self.dialog.label_7)
             t = '5'
         elif index == 4:
             self.dialog.tabPlan.setCurrentIndex(5)
+            self.pixmap = QtGui.QPixmap("Схема профиля.png")
+            self.refreshImage(self.dialog.label_5)
             t = '6'
         elif index == 5:
             self.dialog.tabPlan.setCurrentIndex(0)
+            self.pixmap = QtGui.QPixmap("images/схема.png")
+            self.refreshImage(self.dialog.label)
             t = '1'
         self.dialog.label_6.setText('Рисунок '+t)
-
 
     def BackPic(self):
         index = self.dialog.tabPlan.currentIndex()
 
         if index == 0:
             self.dialog.tabPlan.setCurrentIndex(5)
+            self.pixmap = QtGui.QPixmap("Схема профиля.png")
+            self.refreshImage(self.dialog.label_5)
             t='6'
         elif index == 1:
             self.dialog.tabPlan.setCurrentIndex(0)
+            self.pixmap = QtGui.QPixmap("images/схема.png")
+            self.refreshImage(self.dialog.label)
             t='1'
         elif index == 2:
             self.dialog.tabPlan.setCurrentIndex(1)
+            self.pixmap = QtGui.QPixmap("images/схема2.png")
+            self.refreshImage(self.dialog.label_2)
             t='2'
         elif index == 3:
             self.dialog.tabPlan.setCurrentIndex(2)
+            self.pixmap = QtGui.QPixmap("2.png")
+            self.refreshImage(self.dialog.label_3)
             t='3'
         elif index == 4:
             self.dialog.tabPlan.setCurrentIndex(3)
+            self.pixmap = QtGui.QPixmap("1.png")
+            self.refreshImage(self.dialog.label_4)
             t='4'
         elif index == 5:
             self.dialog.tabPlan.setCurrentIndex(4)
+            self.pixmap = QtGui.QPixmap("images/носовая часть.png")
+            self.refreshImage(self.dialog.label_7)
             t='5'
 
         self.dialog.label_6.setText('Рисунок ' + t)
 
+class Dialog_Help(QtWidgets.QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.dialog = Ui_Dialog_help()
+        self.dialog.setupUi(self)
+        self.set()
 
+    def set(self):
+        self.dialog.pushButton_2.clicked.connect(self.NextPage)
+        self.dialog.pushButton.clicked.connect(self.BackPage)
 
+    def NextPage(self):
+        index = self.dialog.tabWidget.currentIndex()
+        match index:
+            case 0:
+                self.dialog.tabWidget.setCurrentIndex(1)
+            case 1:
+                self.dialog.tabWidget.setCurrentIndex(2)
+            case 2:
+                self.dialog.tabWidget.setCurrentIndex(3)
+            case 3:
+                self.dialog.tabWidget.setCurrentIndex(4)
+            case 4:
+                self.dialog.tabWidget.setCurrentIndex(5)
+            case 5:
+                self.dialog.tabWidget.setCurrentIndex(6)
+            case 6:
+                self.dialog.tabWidget.setCurrentIndex(7)
+            case 7:
+                self.dialog.tabWidget.setCurrentIndex(8)
+            case 8:
+                self.dialog.tabWidget.setCurrentIndex(9)
+            case 9:
+                self.dialog.tabWidget.setCurrentIndex(10)
+            case 10:
+                self.dialog.tabWidget.setCurrentIndex(0)
+
+    def BackPage(self):
+            index = self.dialog.tabWidget.currentIndex()
+            match index:
+                case 0:
+                    self.dialog.tabWidget.setCurrentIndex(10)
+                case 1:
+                    self.dialog.tabWidget.setCurrentIndex(0)
+                case 2:
+                    self.dialog.tabWidget.setCurrentIndex(1)
+                case 3:
+                    self.dialog.tabWidget.setCurrentIndex(2)
+                case 4:
+                    self.dialog.tabWidget.setCurrentIndex(3)
+                case 5:
+                    self.dialog.tabWidget.setCurrentIndex(4)
+                case 6:
+                    self.dialog.tabWidget.setCurrentIndex(5)
+                case 7:
+                    self.dialog.tabWidget.setCurrentIndex(6)
+                case 8:
+                    self.dialog.tabWidget.setCurrentIndex(7)
+                case 9:
+                    self.dialog.tabWidget.setCurrentIndex(8)
+                case 10:
+                    self.dialog.tabWidget.setCurrentIndex(9)
 
 # ДИАЛОГОВОЕ ОКНО С ЗАКРЫЛКАМИ
 class DialogMechanism(QtWidgets.QWidget):
@@ -340,7 +490,7 @@ class ExampleApp(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
         self.main = Ui_MainWindow()
-        self.main.setupUi(self)  # Это нужно для инициализации нашего дизайна
+        self.main.setupUi(self)
         self.show()
         self.set()
         self.connection = sqlite3.connect('bd.db')
@@ -444,7 +594,6 @@ class ExampleApp(QtWidgets.QMainWindow):
         self.main.tabWidget_2.setTabVisible(4, False)
         self.main.tabWidget_2.setTabVisible(5, False)
         self.main.tabWidget_2.setTabVisible(6, False)
-
         self.main.buStart.clicked.connect(self.ButtonEnabled)
         self.main.buWing.clicked.connect(self.pressedWing)
         self.main.buFlapMulard.clicked.connect(self.pressedFlapMulard)
@@ -455,6 +604,7 @@ class ExampleApp(QtWidgets.QMainWindow):
         self.main.buCommonData.clicked.connect(self.pressedCommonData)
         self.main.buShowAirPlan.clicked.connect(self.OpenPlan)
         self.main.buFlapChoose.clicked.connect(self.OpenFlapChoose)
+        self.main.buShowAirPlan_2.clicked.connect(self.OpenHelpDialog)
         self.main.buCre.clicked.connect(self.pressedPolyr)
         self.main.buExport.clicked.connect(self.pressedExport)
         self.main.buFindK.clicked.connect(self.pressedK)
@@ -922,7 +1072,7 @@ class ExampleApp(QtWidgets.QMainWindow):
         self.cursor.execute(Sql_request)
         return self.cursor.fetchone()[0]
 
-    # ОПРЕДЕЛЕНЕ КОЭФФИЦИЕНТА cxk для фонаря
+    # ОПРЕДЕЛЕНИЕ КОЭФФИЦИЕНТА cxk для фонаря кабины пилотов
     def request_cxk(self, type):
         Sql_request = 'SELECT "cxk" FROM "Коэф_cxk" WHERE "Фонарь" = %s' % str('"' + type + '"')
         self.cursor.execute(Sql_request)
@@ -1137,6 +1287,7 @@ class ExampleApp(QtWidgets.QMainWindow):
     # ОТКРЫТИЕ ВКЛАДОК ПО КНОПКАМ
     def pressedWing(self):
         self.main.tabWidget_2.setCurrentIndex(0)
+
         # v = self.find_2cf(0.4, 500)
         # print('2cf = '+str(v))
         # nc_wing = self.find_nc_wing(0.5, 0.16)
@@ -1207,6 +1358,10 @@ class ExampleApp(QtWidgets.QMainWindow):
     def OpenFlapChoose(self):
         dialog = DialogMechanism(self)
         dialog.show()
+
+    def OpenHelpDialog(self):
+        dialog_help = Dialog_Help(self)
+        dialog_help.show()
 
     # РАСЧЕТ ИСХОДНЫХ ДАННЫХ КРЫЛА
     def CalculateWing(self):
@@ -1330,7 +1485,7 @@ class ExampleApp(QtWidgets.QMainWindow):
 
             self.iconbutton(self.main.buWing, self.button)
             permision_for_curve[0] = True
-        except ValueError:
+        except:
             msg = QMessageBox()
             msg.setIcon(QMessageBox.Critical)
             msg.setText("Неправильный ввод данных.")
@@ -1714,15 +1869,12 @@ class ExampleApp(QtWidgets.QMainWindow):
         # Отрисовка
         self.figure.clear()
         ax = self.figure.add_subplot(111)
-        # plot data
-        #ax.set_title('Кривая зависимости Мкр = f(cya)', loc='right', pad=5, fontsize=11)
 
         tck, u = interpolate.splprep([arr_cya, arr_Mkr], s=0)
         xnew, ynew = interpolate.splev(np.linspace(0, 1, 100), tck, der=0)
+        ax.plot(arr_cya, arr_Mkr, '.', xnew, ynew, color='k') # отрисовка
 
-        ax.plot(arr_cya, arr_Mkr, '.', xnew, ynew, color='k')
         ax.plot(cya_rasch, Mrasch, marker='.', color='navy')
-
         ax.text(cya_rasch, Mrasch, '  A(Суа расч;Мрасч)', rotation=0, fontsize=7)
 
         ax.spines["top"].set_visible(False)
@@ -1732,7 +1884,9 @@ class ExampleApp(QtWidgets.QMainWindow):
 
         self.figure.tight_layout()
         self.canvas.draw()
+
         self.figure.savefig('graphics/Mkr.png')
+
         try:
             self.ExportData()
         except PermissionError:
@@ -1978,6 +2132,8 @@ class ExampleApp(QtWidgets.QMainWindow):
         a = a0_vzl
         for i in range(6):
             a = float('%.0f' % (angle+a))
+            if Cyamax_vzl < koef[0] * a + koef[1]:
+                a = a-2
             a_list_up.append(a)
             cya_list_up.append(float('%.3f' % (koef[0] * a + koef[1])))
         a_list_up.append(amax)
@@ -2057,6 +2213,8 @@ class ExampleApp(QtWidgets.QMainWindow):
         a = a0_vzl
         for i in range(6):
             a = float('%.0f' % (angle + a))
+            if Cyamax_vzl_scrin < koef[0] * a + koef[1]:
+                a = a-2
             a_list_up_scrin.append(a)
             cya_list_up_scrin.append(float('%.3f' % (koef[0] * a + koef[1])))
         a_list_up_scrin.append(amax_s)
@@ -2195,6 +2353,8 @@ class ExampleApp(QtWidgets.QMainWindow):
         a = a0_pos
         for i in range(6):
             a = float('%.0f' % (angle + a))
+            if Cya_max_pos < koef[0] * a + koef[1]:
+                a = a-2
             a_list_down.append(a)
             cya_list_down.append(float('%.3f' % (koef[0] * a + koef[1])))
         a_list_down.append(amax)
@@ -2266,6 +2426,8 @@ class ExampleApp(QtWidgets.QMainWindow):
         a = a0_pos
         for i in range(6):
             a = float('%.0f' % (angle + a))
+            if Cya_max_pos_scrin < koef[0] * a + koef[1]:
+                a = a-2
             a_list_down_scrin.append(a)
             cya_list_down_scrin.append(float('%.3f' % (koef[0] * a + koef[1])))
         a_list_down_scrin.append(amax_s)
@@ -3306,6 +3468,8 @@ class ExampleApp(QtWidgets.QMainWindow):
                 tck, u = interpolate.splprep([l_H, list_cya_pol], s=0, k=2)
                 xnew, ynew = interpolate.splev(np.linspace(0, 1, 100), tck)
                 ax.plot(l_H, list_cya_pol, '.', xnew, ynew, color='tab:blue')
+                text = '  H = ' + str(H_)
+                ax.text(l_H[-1], list_cya_pol[-1], text, rotation=0, fontsize=7)
                 # t = PrettyTable(list_M)
                 # t.add_row(list_cya_pol)
                 # print()
@@ -3370,9 +3534,8 @@ class ExampleApp(QtWidgets.QMainWindow):
         return K
 
     def ExportData(self):
-        wb = openpyxl.load_workbook('Шаблон ТРД.xlsx')
-        # заполнение первого листа с данными
-        st_1 = wb['Данные']
+        wb = openpyxl.load_workbook('Шаблон ТРД.xlsx') # открытие шаблона
+        st_1 = wb['Данные'] # выбор листа для заполнения
         data = [l, S, b, b0, bk, n, c_, xc_, f_, a0, xf_, x_degree, xc_degree, lamda, Sf_,
                 Sgd_, Sgsh_, S_, lamdaef, caya, xtau_, cmo, h, bzak_, lzak, Sobzak_, deltavzl,
                 deltapos, xshzak, bsrzak, Sobpr_, bgo, cgo_, lgo, Sgo, lamdago, xgo, bv, Sv, ngo,
@@ -3381,12 +3544,13 @@ class ExampleApp(QtWidgets.QMainWindow):
                 Ssm_gsh, ln_gsh, lamdan_gsh, ngsh, Dv, Fv, Gvzl, V, type, number, P0, H]
         i = 0
         for row in range(1, 82):
-            cell = st_1.cell(row, 4)
+            cell = st_1.cell(row, 4) # присвоение значения клетке файла
             if row == 1 or row == 32 or row == 73:
                 continue
             else:
                 cell.value=data[i]
                 i +=1
+
         # заполнение второго листа с кривыми
         st_2 = wb['Кривые']
         for col in range(2, 10):
@@ -3401,17 +3565,16 @@ class ExampleApp(QtWidgets.QMainWindow):
         # wb.save('/home/'+getpass.getuser())
 
     def ExportImage(self, file_info):
-
         wb = openpyxl.load_workbook('Расчет самолета.xlsx')
         st = wb['Кривые']
         if type == 'ТРД':
             st_2 = wb['Поляры']
         else:
             st_2 = wb['Поляры ТВД']
-        img = Image('graphics/Mkr.png')
-        img.height = 256
+        img = Image('graphics/Mkr.png') # инициализация изображения
+        img.height = 256   # задание размеров
         img.width = 468
-        st.add_image(img, 'C10')
+        st.add_image(img, 'C10') # присвоение расположения верхнего левого угла изображения
         img_1 = Image('graphics/Help.png')
         img_1.height = 256
         img_1.width = 468

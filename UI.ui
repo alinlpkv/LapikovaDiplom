@@ -85,7 +85,7 @@ font-size:14px; }
        <enum>QFrame::Plain</enum>
       </property>
       <property name="lineWidth">
-       <number>0</number>
+       <number>6</number>
       </property>
       <property name="widgetResizable">
        <bool>true</bool>
@@ -98,6 +98,12 @@ font-size:14px; }
          <width>1417</width>
          <height>778</height>
         </rect>
+       </property>
+       <property name="minimumSize">
+        <size>
+         <width>1400</width>
+         <height>775</height>
+        </size>
        </property>
        <property name="styleSheet">
         <string notr="true">QTabBar::tab::selected{
@@ -201,7 +207,7 @@ QLineEdit {
 }
 
 QTabWidget{
-border:0;
+border-bottom: 0;
 }
 
 QDoubleSpinBox {
@@ -219,6 +225,12 @@ QSpinBox {
             </property>
             <property name="currentIndex">
              <number>7</number>
+            </property>
+            <property name="usesScrollButtons">
+             <bool>true</bool>
+            </property>
+            <property name="documentMode">
+             <bool>true</bool>
             </property>
             <property name="tabBarAutoHide">
              <bool>false</bool>
@@ -3507,13 +3519,6 @@ font-size: 14px;
                    </property>
                   </widget>
                  </item>
-                 <item row="1" column="0">
-                  <widget class="QRadioButton" name="rb_2">
-                   <property name="text">
-                    <string>Плавный переход задней части фонаря в фюзеляж</string>
-                   </property>
-                  </widget>
-                 </item>
                  <item row="2" column="0">
                   <widget class="QRadioButton" name="rb_3">
                    <property name="text">
@@ -3521,10 +3526,10 @@ font-size: 14px;
                    </property>
                   </widget>
                  </item>
-                 <item row="3" column="0">
-                  <widget class="QRadioButton" name="rb_no">
+                 <item row="1" column="0">
+                  <widget class="QRadioButton" name="rb_2">
                    <property name="text">
-                    <string>Отсутствует</string>
+                    <string>Плавный переход задней части фонаря в фюзеляж</string>
                    </property>
                    <property name="checked">
                     <bool>true</bool>
@@ -3971,6 +3976,9 @@ border:0;}
             </property>
             <property name="currentIndex">
              <number>4</number>
+            </property>
+            <property name="documentMode">
+             <bool>true</bool>
             </property>
             <widget class="QWidget" name="tabMkr">
              <attribute name="title">
@@ -5264,6 +5272,9 @@ QLineEdit {
             </property>
             <property name="currentIndex">
              <number>3</number>
+            </property>
+            <property name="documentMode">
+             <bool>true</bool>
             </property>
             <widget class="QWidget" name="tabHelp_2">
              <property name="styleSheet">
